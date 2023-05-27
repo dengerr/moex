@@ -11,8 +11,13 @@ fav:
 update:
 	wget https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities.json -O securities.json
 
-dev:
+securities.json: update
+
+settings.py:
+	python -c "import secrets; print(f'SECRET_KEY = b\'{secrets.token_urlsafe(16)}\'')" > settings.py
+
+dev: settings.py securities.json
 	flask --app application run --debug --reload
 
-start:
+start: settings.py securities.json
 	gunicorn -w 1 'application:app' -b 127.0.0.1:8456
