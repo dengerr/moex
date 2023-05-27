@@ -14,7 +14,7 @@
     <th align=right><input type="text" name="kapital" value="{{ ub.total() }}" style="width: 6em; text-align: right;" hx-patch="/" hx-target="body"></th>
     <th align=right>fact</th>
     <th align=right>{{ "%.0f" % ub.user_amount_sum }}</th>
-    <th align=right>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, total)) }}</th>
+    <th align=right>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, ub.total())) }}</th>
   </tr>
 
   {% for we in ub.all %}
