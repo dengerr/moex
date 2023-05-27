@@ -4,14 +4,12 @@
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 
 <style>
-table {width: 100%; min-width: 780px;}
+table {width: 100%; min-width: 850px;}
 input {width: 6em; text-align: right;}
 .fav {font-weight: bold; }
 </style>
 
 <h1 align=center>MOEX table</h1>
-
-<div style="text-align: right; "><a href="/logout">logout</a></div>
 
 <table>
   <tr>
@@ -43,6 +41,8 @@ input {width: 6em; text-align: right;}
   {%- endfor %}
 
 </table>
+
+<p style="float: right;"><a href="/logout">logout</a></p>
 
 <p>Ignored:
   {%- for code in ub.ignored %}
