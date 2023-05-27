@@ -1,5 +1,4 @@
 flask
 pyotp
-flask-bootstrap4
 flask-qrcode
 gunicorn
