@@ -1,0 +1,35 @@
+<!doctype html>
+<title>MO EX table</title>
+
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+<button hx-post="/clicked" hx-swap="outerHTML">
+  table 2
+</button>
+
+<table style="width: 100%;">
+  <tr>
+    <th colspan=3></th>
+    <th>plan</th>
+    <th>{{ ub.total() }}</th>
+    <th>fact</th>
+    <th>{{ "%.0f" % ub.user_amount_sum }}</th>
+    <th>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, total)) }}</th>
+  </tr>
+
+  {% for we in ub.all %}
+  <tr style="{% if we.code in ub.favorites %}font-weight: bold; {% endif %}">
+    {% set plan = ub.plans[we.code] %}
+    {% set fact = ub.facts[we.code] %}
+    <td>{{we.shortname}}</td>
+    <td>{{we.code}}</td>
+    <td align=right>{{"%.2f" % we.price}}</td>
+    <td align=right>{{"%.0f" % plan.count}}</td>
+    <td align=right>{{"%.0f" % plan.amount}}</td>
+    <td align=right>{{"%.0f" % fact.count}}</td>
+    <td align=right>{{"%.0f" % fact.amount}}</td>
+    <td align=right>{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
+  </tr>
+  {% endfor %}
+
+</table>

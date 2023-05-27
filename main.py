@@ -1,3 +1,4 @@
+from typing import Optional
 import sys
 from collections import namedtuple
 from decimal import Decimal
@@ -22,7 +23,7 @@ class Weight:
     code: str
     weight: Decimal
     shortname: str
-    _secur: Secur = None
+    _secur: Optional[Secur] = None
 
     def __init__(self, code, weight, shortname):
         self.code = code
@@ -100,7 +101,7 @@ class UserBriefcase:
         self.kapital = kapital
         # self.all_rur = sum((we.weight / self.weights_sum * kapital) for we in self.all)
         self.update_plan()
-        self.all_rur = sum(plan.amount for plan in self.plans.values())
+        self.all_rur = Decimal(sum(plan.amount for plan in self.plans.values()))
 
     def set_briefcase(self, briefcase):
         self.briefcase = briefcase
@@ -116,7 +117,7 @@ class UserBriefcase:
         self.set_weights_sum()
 
     def set_weights_sum(self):
-        self.weights_sum = sum(we.weight for we in self.all)
+        self.weights_sum = Decimal(sum(we.weight for we in self.all))
 
     def update_plan(self):
         self.plans = {}
@@ -145,8 +146,15 @@ class UserBriefcase:
         else:
             plan_amount = self.plans[code].amount
             fact_amount = self.facts[code].amount
-        if plan_amount or fact_amount:
-            return fact_amount / plan_amount
+        return self.in_percent(fact_amount, plan_amount)
+
+    def total(self, use_rur=False):
+        return self.all_rur if use_rur else self.kapital
+
+    def in_percent(self, cur, total):
+        if cur and total:
+            in_percent = cur / total
+            return in_percent
         else:
             return 0
 
@@ -164,10 +172,8 @@ class UserBriefcase:
 
     def print_all(self, use_rur=False, only_fav=False):
         in_percent = 0
-        total = self.all_rur if use_rur else self.kapital
-        if self.user_amount_sum and total:
-            in_percent = self.user_amount_sum / total
-        print(f"{' ':>20} {' ':>5} {' ':>9} {'plan':>7} {total:>10.0f} {'fact':>7} {self.user_amount_sum:>10.0f} ({in_percent:>7.0%})")
+        total = self.total(use_rur)
+        print(f"{' ':>20} {' ':>5} {' ':>9} {'plan':>7} {total:>10.0f} {'fact':>7} {self.user_amount_sum:>10.0f} ({self.in_percent(self.user_amount_sum, total):>7.0%})")
         print()
 
         print(f"{' ':>20} {'CODE':<5} {'price':>9} {'PI':>7} {'PRUR':>10} {'FI':>7} {'FRUR':>10} ({'%%%':^7})")
@@ -178,20 +184,21 @@ class UserBriefcase:
             fact = self.facts[we.code]
             in_percent = self.get_in_percent(we.code)
             fav = 'v' if not only_fav and we.code in self.favorites else ''
-            ign = 'i' if we.code in ignored.split() else ''
+            ign = 'i' if we.code in self.ignored else ''
             print(f'{we.shortname[:20]:<20} {we.code:<5} {we.price:>9.2f} {plan.count:>7} {plan.amount:>10.0f} {fact.count:>7} {fact.amount:>10.0f} ({in_percent:>7.0%}) {fav or ign}')
 
 
-ub = UserBriefcase()
-with open('user_briefcase.json', 'r') as fp:
-    user_data = json.load(fp)
-    ignored = user_data.get('ignored', [])
-    if 'all' not in sys.argv:
-        ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
-    favorites = user_data.get('favorites', [])
-    ub.set_favorites(favorites if isinstance(favorites, list) else favorites.split())
-    ub.set_kapital(Decimal(user_data['kapital']))
-    ub.set_briefcase(user_data['briefcase'])
+if __name__ == '__main__':
+    ub = UserBriefcase()
+    with open('user_briefcase.json', 'r') as fp:
+        user_data = json.load(fp)
+        ignored = user_data.get('ignored', [])
+        if 'all' not in sys.argv:
+            ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
+        favorites = user_data.get('favorites', [])
+        ub.set_favorites(favorites if isinstance(favorites, list) else favorites.split())
+        ub.set_kapital(Decimal(user_data['kapital']))
+        ub.set_briefcase(user_data['briefcase'])
 
-only_fav = 'fav' in sys.argv
-ub.print_all(only_fav=only_fav)
+    only_fav = 'fav' in sys.argv
+    ub.print_all(only_fav=only_fav)
