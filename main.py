@@ -51,8 +51,8 @@ class Weight:
 
 # init
 def get_rows():
-    with open('securities.json', 'r') as ff:
-        data = json.load(ff)['securities']
+    with open('securities.json', 'r') as fp:
+        data = json.load(fp)['securities']
     rows = [Secur(*row) for row in data['data']]
     return rows
 

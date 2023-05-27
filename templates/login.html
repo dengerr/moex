@@ -1,0 +1,21 @@
+<!doctype html>
+<title>MO EX table</title>
+
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+<h1 align=center>MOEX table</h1>
+
+<form action="/login" method="POST" hx-post="/login" hx-target="#result" style="text-align: center;">
+
+  <p>
+    email: <input name="email" type="email">
+  </p>
+
+
+  <p id="result">
+  </p>
+
+  <p><button type=submit> submit </button></p>
+
+</form>
+

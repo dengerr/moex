@@ -3,15 +3,15 @@
 
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 
-<button hx-post="/clicked" hx-swap="outerHTML">
-  table 2
-</button>
+<h1 align=center>MOEX table</h1>
+
+<div style="text-align: right; "><a href="/logout">logout</a></div>
 
 <table style="width: 100%; min-width: 780px;">
   <tr>
-    <th colspan=3></th>
+    <th colspan=3>{{ user.email }}</th>
     <th align=right>plan</th>
-    <th align=right>{{ ub.total() }}</th>
+    <th align=right><input type="text" name="kapital" value="{{ ub.total() }}" style="width: 6em; text-align: right;" hx-patch="/" hx-target="body"></th>
     <th align=right>fact</th>
     <th align=right>{{ "%.0f" % ub.user_amount_sum }}</th>
     <th align=right>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, total)) }}</th>
@@ -26,7 +26,7 @@
     <td align=right>{{"%.2f" % we.price}}</td>
     <td align=right>{{"%.0f" % plan.count}}</td>
     <td align=right>{{"%.0f" % plan.amount}}</td>
-    <td align=right>{{"%.0f" % fact.count}}</td>
+    <td align=right><input type="text" name="{{we.code}}" value="{{'%.0f' % fact.count}}" style="width: 6em; text-align: right;" hx-patch="/" hx-target="body"></td>
     <td align=right>{{"%.0f" % fact.amount}}</td>
     <td align=right>{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
   </tr>
