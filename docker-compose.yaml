@@ -4,7 +4,7 @@ services:
     image: python:3.11-slim
     restart: always
     ports:
-      - 8456:8456
+      - "8456:8456"
     volumes:
       - ./:/app
     command: sh -c "cd /app && apt update && apt install make wget -y && make install start"

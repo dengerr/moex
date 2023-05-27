@@ -20,7 +20,7 @@ dev: settings.py securities.json
 	flask --app application run --debug --reload
 
 start: settings.py securities.json
-	gunicorn -w 1 'application:app' -b 127.0.0.1:8456
+	gunicorn -w 1 'application:app' -b 0.0.0.0:8456
 
 install:
 	pip install -r requirements.txt
