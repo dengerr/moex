@@ -15,4 +15,4 @@ dev:
 	flask --app application run --debug --reload
 
 start:
-	gunicorn -w 1 'application:app'
+	gunicorn -w 1 'application:app' -b 127.0.0.1:8456
