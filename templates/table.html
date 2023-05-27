@@ -7,14 +7,14 @@
   table 2
 </button>
 
-<table style="width: 100%;">
+<table style="width: 100%; min-width: 780px;">
   <tr>
     <th colspan=3></th>
-    <th>plan</th>
-    <th>{{ ub.total() }}</th>
-    <th>fact</th>
-    <th>{{ "%.0f" % ub.user_amount_sum }}</th>
-    <th>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, total)) }}</th>
+    <th align=right>plan</th>
+    <th align=right>{{ ub.total() }}</th>
+    <th align=right>fact</th>
+    <th align=right>{{ "%.0f" % ub.user_amount_sum }}</th>
+    <th align=right>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, total)) }}</th>
   </tr>
 
   {% for we in ub.all %}
