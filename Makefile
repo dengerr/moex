@@ -10,3 +10,9 @@ fav:
 
 update:
 	wget https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities.json -O securities.json
+
+dev:
+	flask --app application run --debug --reload
+
+start:
+	gunicorn -w 1 'application:app'
