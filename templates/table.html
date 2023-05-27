@@ -6,10 +6,10 @@
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 
 <style>
-body {max-width: 1200px; min-width: 850px; margin: 1em auto;}
+body {max-width: 900px; min-width: 650px; margin: 1em auto;}
 table {width: 100%;}
 table td {padding-bottom: 0.3em; }
-input {width: 6em; text-align: right;}
+input {width: 5em; text-align: right;}
 a {cursor: pointer; }
 .fav {font-weight: bold; }
 </style>
@@ -32,9 +32,10 @@ a {cursor: pointer; }
     {%- set fact = ub.facts[we.code] %}
     <td>
       <a hx-patch="/" hx-target="body" hx-vals='{"toggle_fav": "{{we.code}}"}'>&#128151;</a>
-      {{we.shortname}}
     </td>
     <td>
+      {{we.shortname}}
+      <br>
       {{we.code}}
     </td>
     <td align=right>{{"%.2f" % we.price}}</td>
