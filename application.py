@@ -10,9 +10,10 @@ import pyotp
 
 from main import UserBriefcase
 from users import User, USERS_FILENAME
+import settings
 
 app = Flask(__name__)
-app.secret_key = b'lkdfu5478xjGG^&#&sg'
+app.secret_key = settings.SECRET_KEY
 QRcode(app)
 
 
