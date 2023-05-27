@@ -1,10 +1,5 @@
-import shelve
-from secrets import token_urlsafe
-from typing import Optional
-
 import pyotp
 
-SESSION_FILENAME = 'sessions.shelve'
 USERS_FILENAME = 'users.shelve'
 
 
@@ -58,26 +53,3 @@ class User:
                 briefcase={},
             )
         return self.user['briefcase']
-
-
-class Session:
-    @classmethod
-    def create(cls, email: str):
-        token = token_urlsafe(16)
-        with shelve.open(SESSION_FILENAME) as store:
-            store[token] = dict(
-                email=email,
-                user=email,
-            )
-        return token
-
-    @classmethod
-    def get(cls, token: str) -> Optional[dict]:
-        with shelve.open(SESSION_FILENAME) as store:
-            if token in store:
-                session = store[token]
-                if not session:
-                    return
-                with shelve.open(USERS_FILENAME) as users:
-                    user = users.get(session.get('user'))
-                return user

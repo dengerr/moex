@@ -13,7 +13,7 @@ input {width: 6em; text-align: right;}
 
 <table>
   <tr>
-    <th colspan=3>{{ user.email }}</th>
+    <th colspan=3>{{ session.email }}</th>
     <th align=right>plan</th>
     <th align=right><input type="text" name="kapital" value="{{ ub.total() }}" hx-patch="/" hx-target="body"></th>
     <th align=right>fact</th>

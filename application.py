@@ -3,14 +3,16 @@ from decimal import Decimal
 
 from flask import request
 from flask import Flask, render_template, render_template_string
-from flask import make_response, redirect
+from flask import redirect
+from flask import session
 from flask_qrcode import QRcode
 import pyotp
 
 from main import UserBriefcase
-from users import User, Session, USERS_FILENAME
+from users import User, USERS_FILENAME
 
 app = Flask(__name__)
+app.secret_key = b'lkdfu5478xjGG^&#&sg'
 QRcode(app)
 
 
@@ -27,12 +29,11 @@ def init_briefcase(user_data):
 
 @app.route("/", methods=['GET', 'PATCH'])
 def index():
-    user_dict = Session.get(request.cookies.get('token', ''))
-    if not user_dict:
+    if 'email' not in session:
         return redirect('/login')
 
     with shelve.open(USERS_FILENAME) as store:
-        user = User(store, user_dict['email'])
+        user = User(store, session['email'])
 
         if request.method == 'PATCH':
             for k, v in request.form.items():
@@ -58,7 +59,7 @@ def index():
 
         ub = init_briefcase(user.briefcase)
 
-    return render_template('table.html', ub=ub, user=user_dict)
+    return render_template('table.html', ub=ub, session=session)
 
 
 @app.route("/qr")
@@ -75,11 +76,8 @@ def login():
             user = User(store, email)
             if code := request.form.get('code'):
                 if user.check(code):
-                    resp = make_response(render_template_string(
-                        'Login success, go to <a href="/">MOEX table</a>'))
-                    token = Session.create(email)
-                    resp.set_cookie('token', token)
-                    return resp
+                    session['email'] = email
+                    return 'Login success, go to <a href="/">MOEX table</a>'
 
             elif not user.is_available():
                 user_secret = user.new_secret()
@@ -88,8 +86,9 @@ def login():
             return render_template('totp_form.html', qr=qr)
     return render_template('login.html')
 
+
 @app.route("/logout", methods=['GET', 'POST'])
 def logout():
-    resp = make_response(redirect('/'))
-    resp.set_cookie('token', '')
-    return resp
+    if 'email' in session:
+        del session['email']
+    return redirect('/')
