@@ -1,12 +1,16 @@
 <!doctype html>
-<title>MO EX table</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOEX table</title>
 
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 
 <style>
 body {max-width: 1200px; min-width: 850px; margin: 1em auto;}
 table {width: 100%;}
+table td {padding-bottom: 0.3em; }
 input {width: 6em; text-align: right;}
+a {cursor: pointer; }
 .fav {font-weight: bold; }
 </style>
 
@@ -26,8 +30,13 @@ input {width: 6em; text-align: right;}
   <tr class="{% if we.code in ub.favorites %}fav{% endif %}">
     {%- set plan = ub.plans[we.code] %}
     {%- set fact = ub.facts[we.code] %}
-    <td>{{we.shortname}}</td>
-    <td>{{we.code}}</td>
+    <td>
+      <a hx-patch="/" hx-target="body" hx-vals='{"toggle_fav": "{{we.code}}"}'>&#128151;</a>
+      {{we.shortname}}
+    </td>
+    <td>
+      {{we.code}}
+    </td>
     <td align=right>{{"%.2f" % we.price}}</td>
     <td align=right>{{"%.0f" % plan.count}}</td>
     <td align=right>{{"%.0f" % plan.amount}}</td>
@@ -35,8 +44,8 @@ input {width: 6em; text-align: right;}
     <td align=right>{{"%.0f" % fact.amount}}</td>
     <td align=right>{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
     <th align=right>
-      <button hx-patch="/" hx-target="body" hx-vals='{"toggle_fav": "{{we.code}}"}'>&#128151;</button>
-      <a hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{we.code}}"}'>&#128078;</a>
+      <a hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{we.code}}"}' hx-confirm="Точно?">
+        &#128078;</a>
     </th>
   </tr>
   {%- endfor %}
