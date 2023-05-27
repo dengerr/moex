@@ -60,7 +60,7 @@ def index():
 
         ub = init_briefcase(user.briefcase)
 
-    return render_template('table.html', ub=ub, session=session)
+    return render_template('table-mobile.html', ub=ub, session=session)
 
 
 @app.route("/qr")
