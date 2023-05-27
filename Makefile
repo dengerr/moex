@@ -21,3 +21,6 @@ dev: settings.py securities.json
 
 start: settings.py securities.json
 	gunicorn -w 1 'application:app' -b 127.0.0.1:8456
+
+install:
+	pip install -r requirements.txt
