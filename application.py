@@ -38,6 +38,13 @@ def index():
             for k, v in request.form.items():
                 if k == 'kapital':
                     user.user['briefcase']['kapital'] = int(v)
+                elif k == 'toggle_fav':
+                    favs = user.user['briefcase']['favorites'].split()
+                    if v in favs:
+                        favs.remove(v)
+                    else:
+                        favs.append(v)
+                    user.user['briefcase']['favorites'] = ' '.join(favs)
                 else:
                     user.user['briefcase']['briefcase'][k] = int(v)
             user.save()

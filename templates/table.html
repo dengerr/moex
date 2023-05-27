@@ -29,6 +29,9 @@
     <td align=right><input type="text" name="{{we.code}}" value="{{'%.0f' % fact.count}}" style="width: 6em; text-align: right;" hx-patch="/" hx-target="body"></td>
     <td align=right>{{"%.0f" % fact.amount}}</td>
     <td align=right>{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
+    <th>
+      <button hx-patch="/" hx-target="body" hx-vals='{"toggle_fav": "{{we.code}}"}'>&#128151;</button>
+    </th>
   </tr>
   {% endfor %}
 
