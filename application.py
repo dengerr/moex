@@ -45,6 +45,13 @@ def index():
                     else:
                         favs.append(v)
                     user.user['briefcase']['favorites'] = ' '.join(favs)
+                elif k == 'toggle_ign':
+                    ignored = user.user['briefcase']['ignored'].split()
+                    if v in ignored:
+                        ignored.remove(v)
+                    else:
+                        ignored.append(v)
+                    user.user['briefcase']['ignored'] = ' '.join(ignored)
                 else:
                     user.user['briefcase']['briefcase'][k] = int(v)
             user.save()

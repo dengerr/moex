@@ -31,8 +31,15 @@
     <td align=right>{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
     <th>
       <button hx-patch="/" hx-target="body" hx-vals='{"toggle_fav": "{{we.code}}"}'>&#128151;</button>
+      <button hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{we.code}}"}'>&#128078;</button>
     </th>
   </tr>
   {% endfor %}
 
 </table>
+
+<p>Ignored:
+  {% for code in ub.ignored %}
+    <button hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{code}}"}'>{{code}}</button>
+  {% endfor %}
+</p>
