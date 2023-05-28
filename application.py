@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from flask import request
 from flask import Flask, render_template, render_template_string
-from flask import redirect
+from flask import redirect, make_response
 from flask import session
 from flask_qrcode import QRcode
 import pyotp
@@ -60,7 +60,23 @@ def index():
 
         ub = init_briefcase(user.briefcase)
 
-    return render_template('table-mobile.html', ub=ub, session=session)
+    templates = {
+        'desktop': 'table.html',
+        'mobile': 'table-mobile.html',
+    }
+    layout = request.cookies.get('layout', '')
+    template = templates.get(layout, templates['mobile'])
+
+    return render_template(template, ub=ub, session=session)
+
+
+@app.route("/settings")
+def settings():
+    layout = request.args.get('layout', '')
+    response = make_response(redirect('/'))
+    if layout in ('desktop', 'mobile'):
+        response.set_cookie('layout', layout)
+    return response
 
 
 @app.route("/qr")

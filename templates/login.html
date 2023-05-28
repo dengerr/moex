@@ -8,14 +8,12 @@
 <form action="/login" method="POST" hx-post="/login" hx-target="#result" style="text-align: center;">
 
   <p>
-    email: <input name="email" type="email">
+    email: <input name="email" type="email" hx-post="/login" hx-target="#result">
   </p>
 
 
   <p id="result">
   </p>
-
-  <p><button type=submit> submit </button></p>
 
 </form>
 
