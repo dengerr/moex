@@ -12,6 +12,7 @@ table {width: 98%; margin: 0 auto;}
 table td {padding-bottom: 0.3em; padding-top: 0.3em; }
 table .first {border-top: 1px solid black;}
 input {width: 5em; text-align: right;}
+.bigger {color: red;}
 
 html, a {color: #222;}
 body, input {font-size: 16px;}
@@ -76,7 +77,7 @@ p {margin: 1em 0;}
     <td align=center>
       {{we.code}}
       <br>
-      {{"{:,.0f}".format(we.price)}}
+      {{"{:,.2f}".format(we.price)}}
     </td>
     <td align=right>
       {{"%.0f" % plan.count}}
@@ -93,7 +94,7 @@ p {margin: 1em 0;}
     <!-- <td align=right> -->
       {{"{:,.0f}".format(fact.amount)}}
     </td>
-    <td align=center>{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
+    <td align=center class="{% if ub.get_in_percent(we.code) > 1.5 %}bigger{% endif %}">{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
   </tr>
   {%- endfor %}
 

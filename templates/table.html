@@ -11,6 +11,7 @@ body {max-width: 1200px; min-width: 780px; margin: 0 auto; padding: 1em;}
 table {width: 98%; margin: 0 auto;}
 table td {padding-bottom: 0.3em; }
 input {width: 5em; text-align: right;}
+.bigger {color: red;}
 
 html, a {color: #222;}
 body, input {font-size: 16px;}
@@ -79,7 +80,7 @@ p {margin: 1em 0;}
     <td align=right>
       {{"{:,.0f}".format(fact.amount)}}
     </td>
-    <td align=right>{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
+    <td align=right class="{% if ub.get_in_percent(we.code) > 1.5 %}bigger{% endif %}">{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
     <th align=right>
       <a hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{we.code}}"}'
         hx-confirm="Убрать из таблицы?">
