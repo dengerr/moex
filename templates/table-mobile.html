@@ -76,7 +76,7 @@ p {margin: 1em 0;}
     <td align=center>
       {{we.code}}
       <br>
-      {{"%.2f" % we.price}}
+      {{"{:,.0f}".format(we.price)}}
     </td>
     <td align=right>
       {{"%.0f" % plan.count}}
