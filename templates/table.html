@@ -70,7 +70,9 @@ p {margin: 1em 0;}
       {{we.shortname}}
     </td>
     <td align=right>
-      {{we.code}}
+      <a href="https://www.moex.com/ru/issue.aspx?board=TQBR&code={{we.code}}&utm_source=www.moex.com&utm_term={{we.code}}" target="_blank">
+        {{we.code}}
+      </a>
     </td>
     <td align=right>
       {{"{:,.2f}".format(we.price)}}
