@@ -140,7 +140,9 @@ class UserBriefcase:
             self.facts[we.code] = Fact(count, amount)
 
     def get_in_percent(self, code):
+        # процент акции от планового по этой акции
         if code in PAIRS_DICT:
+            # для парных акций считаем сумму и по плану, и по факту
             plan_amount = sum(self.plans[_code].amount for _code in PAIRS_DICT[code])
             fact_amount = sum(self.facts[_code].amount for _code in PAIRS_DICT[code])
         else:
@@ -148,8 +150,13 @@ class UserBriefcase:
             fact_amount = self.facts[code].amount
         return self.in_percent(fact_amount, plan_amount)
 
+    def percent_of_total(self, code):
+        # процент акции от общего капитала
+        fact_amount = self.facts[code].amount
+        return self.in_percent(fact_amount, self.total())
+
     def total(self, use_rur=False):
-        return self.all_rur if use_rur else self.kapital
+        return self.all_rur if use_rur and self.all_rur else self.kapital
 
     def in_percent(self, cur, total):
         if cur and total:

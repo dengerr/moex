@@ -71,7 +71,7 @@ def index():
 
 
 @app.route("/settings")
-def settings():
+def settings_view():
     layout = request.args.get('layout', '')
     response = make_response(redirect('/'))
     if layout in ('desktop', 'mobile'):

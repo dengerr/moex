@@ -31,7 +31,9 @@ p {margin: 1em 0;}
 
 <table>
   <tr>
-    <th align=left></th>
+    <th align=left>
+      <!-- кнопка избранного -->
+    </th>
     <th align=left colspan=2>{{ session.email }}</th>
     <th align=right>
       price
@@ -48,7 +50,13 @@ p {margin: 1em 0;}
     <th align=right>
       {{ "{:,.0f}".format(ub.user_amount_sum) }}
     </th>
-    <th align=right>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, ub.total())) }}</th>
+    <th align=right title="Процент от плана">{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, ub.total())) }}</th>
+    <th align=right title="Процент от капитала">
+      <!-- процент от капитала -->
+    </th>
+    <th align=right>
+      <!-- кнопка игнора -->
+    </th>
   </tr>
 
   {%- for we in ub.all %}
@@ -81,6 +89,10 @@ p {margin: 1em 0;}
       {{"{:,.0f}".format(fact.amount)}}
     </td>
     <td align=right class="{% if ub.get_in_percent(we.code) > 1.5 %}bigger{% endif %}">{{"{:.0%}".format(ub.get_in_percent(we.code))}}</td>
+
+    {%- set percent_of_total = ub.percent_of_total(we.code) %}
+    <td align=right>{% if percent_of_total %}{{"{:.1%}".format(percent_of_total)}}{% endif %}</td>
+
     <th align=right>
       <a hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{we.code}}"}'
         hx-confirm="Убрать из таблицы?">
