@@ -28,6 +28,15 @@ def init_briefcase(user_data):
     return ub
 
 
+def htmx_response(template, **data):
+    is_htmx = request.headers.get('Hx-Request') == 'true'
+
+    if is_htmx:
+        return render_template(template, **data)
+    else:
+        return render_template('base.html', template=template, **data)
+
+
 @app.route("/", methods=['GET', 'PATCH'])
 def index():
     if 'email' not in session:
@@ -67,7 +76,7 @@ def index():
     layout = request.cookies.get('layout', '')
     template = templates.get(layout, templates['mobile'])
 
-    return render_template(template, ub=ub, session=session)
+    return htmx_response(template, ub=ub, session=session)
 
 
 @app.route("/settings")

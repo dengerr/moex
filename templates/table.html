@@ -1,26 +1,4 @@
-<!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MOEX table</title>
-
-<script src="https://unpkg.com/htmx.org@1.9.2"></script>
-<link rel="icon" href="data:,">
-
-<style>
-body {max-width: 1200px; min-width: 780px; margin: 0 auto; padding: 1em;}
-table {width: 98%; margin: 0 auto;}
-table td {padding-bottom: 0.3em; }
-input {width: 5em; text-align: right;}
-.bigger {color: red;}
-
-html, a {color: #222;}
-body, input {font-size: 16px;}
-
-a {cursor: pointer; }
-.fav {font-weight: bold; }
-p {margin: 1em 0;}
-</style>
-
+<body class="desktop">
 <h1 align=center>MOEX table</h1>
 
 <p align=center>
@@ -34,7 +12,7 @@ p {margin: 1em 0;}
     <th align=left>
       <!-- кнопка избранного -->
     </th>
-    <th align=left colspan=2>{{ session.email }}</th>
+    <th align=left colspan=2></th>
     <th align=right>
       price
     </th>
@@ -113,3 +91,4 @@ p {margin: 1em 0;}
     </button>
   {%- endfor %}
 </p>
+</body>
