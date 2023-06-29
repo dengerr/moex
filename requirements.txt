@@ -2,3 +2,4 @@ flask
 pyotp
 flask-qrcode
 gunicorn
+tinkoff-investments==0.2.0b58

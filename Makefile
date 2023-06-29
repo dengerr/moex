@@ -10,6 +10,8 @@ fav:
 
 update:
 	wget https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities.json -O securities.json
+update_tinkoff:
+	python3 tink.py
 
 securities.json: update
 

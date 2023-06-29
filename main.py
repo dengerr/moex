@@ -1,8 +1,8 @@
-from typing import Optional
+import json
 import sys
 from collections import namedtuple
 from decimal import Decimal
-import json
+from typing import Optional
 
 secure_columns = [
     'SECID', 'BOARDID', 'SHORTNAME', 'PREVPRICE', 'LOTSIZE', 'FACEVALUE', 'STATUS', 'BOARDNAME', 'DECIMALS', 'SECNAME',
@@ -19,6 +19,7 @@ PAIRS = (
 )
 PAIRS_DICT = {code: pair for pair in PAIRS for code in pair}
 
+
 class Weight:
     code: str
     weight: Decimal
@@ -34,15 +35,12 @@ class Weight:
         return f'{self.code}'
 
     def set_secur(self, secur):
-        self._secur = secur
+        self.price = Decimal(secur.PREVPRICE)
+        self.lotsize = secur.LOTSIZE
 
-    @property
-    def price(self):
-        return Decimal(self._secur.PREVPRICE)
-
-    @property
-    def lotsize(self):
-        return self._secur.LOTSIZE
+    def set_price(self, price, lotsize: int):
+        self.price = Decimal(price)
+        self.lotsize = lotsize
 
     @property
     def lotprice(self):
@@ -67,9 +65,17 @@ def get_weights():
 weights = {}
 for weight in get_weights():
     weights[weight.code] = weight
-for row in get_rows():
-    if row.SECID in weights:
-        weights[row.SECID].set_secur(row)
+
+try:
+    with open('prices.json', 'r') as fp:
+        data = json.load(fp)
+    for code, attr in data.items():
+        if code in weights:
+            weights[code].set_price(attr['price'], attr['lotsize'])
+except Exception:
+    for row in get_rows():
+        if row.SECID in weights:
+            weights[row.SECID].set_secur(row)
 
 
 class UserBriefcase:
