@@ -1,11 +1,12 @@
 import json
-import os
 
 from tinkoff.invest import Client
 from tinkoff.invest.grpc.instruments_pb2 import INSTRUMENT_ID_TYPE_TICKER
 from tinkoff.invest.utils import quotation_to_decimal
 
-TOKEN = os.environ["INVEST_TOKEN"]
+from settings import TINKOFF_TOKEN
+
+TOKEN = TINKOFF_TOKEN
 CLASS_CODE = 'TQBR'
 TICKERS = ['SBER', 'MOEX', 'ROSN', 'GMKN', 'LKOH']
 
@@ -36,10 +37,6 @@ def save_prices(shares):
 
     with open('prices.json', 'w') as fp:
         json.dump(result, fp)
-        # for share, price in shares:
-        #     data = share.ticker, str(price), str(share.lot)
-        #     fp.write('\t'.join(data))
-        #     fp.write('\n')
 
 
 def main_fun():
