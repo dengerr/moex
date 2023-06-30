@@ -8,7 +8,8 @@ from flask import session
 from flask_qrcode import QRcode
 import pyotp
 
-from main import UserBriefcase
+from main import UserBriefcase, weights
+import tink 
 from users import User, USERS_FILENAME
 import settings
 
@@ -86,6 +87,18 @@ def settings_view():
     if layout in ('desktop', 'mobile'):
         response.set_cookie('layout', layout)
     return response
+
+
+@app.route("/update_prices", methods=['GET', 'POST'])
+def update_prices_view():
+    tickers = [weight.code for weight in weights.values()]
+    with tink.Client(tink.TOKEN) as client:
+        shares = tink.get_shares(client, tickers)
+        data = tink.save_prices(tink.get_prices(client, shares))
+    for code, attr in data.items():
+        if code in weights:
+            weights[code].set_price(attr['price'], attr['lotsize'])
+    return redirect('/')
 
 
 @app.route("/qr")

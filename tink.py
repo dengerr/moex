@@ -25,7 +25,6 @@ def get_prices(client, shares, ):
     response = client.market_data.get_last_prices(figi=[share.figi for share in shares.values()])
     result = []
     for item in response.last_prices:
-        print(item.figi, ' = ', item.price, shares[item.figi].name, )
         result.append((shares[item.figi], quotation_to_decimal(item.price)))
     return result
 
@@ -37,6 +36,8 @@ def save_prices(shares):
 
     with open('prices.json', 'w') as fp:
         json.dump(result, fp)
+
+    return result
 
 
 def main_fun():
