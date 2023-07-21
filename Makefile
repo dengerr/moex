@@ -18,10 +18,10 @@ securities.json: update
 settings.py:
 	python -c "import secrets; print(f'SECRET_KEY = b\'{secrets.token_urlsafe(16)}\'')" > settings.py
 
-dev: settings.py securities.json
+dev: settings.py
 	flask --app application run --debug --reload
 
-start: settings.py securities.json
+start: settings.py
 	gunicorn -w 1 'application:app' -b 0.0.0.0:8456
 
 install:

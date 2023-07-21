@@ -8,8 +8,9 @@ from flask import session
 from flask_qrcode import QRcode
 import pyotp
 
-from main import UserBriefcase, weights
-import tink 
+import db
+from main import UserBriefcase, WeightManager
+import tink
 from users import User, USERS_FILENAME
 import settings
 
@@ -17,9 +18,11 @@ app = Flask(__name__)
 app.secret_key = settings.SECRET_KEY
 QRcode(app)
 
+weight_manager = WeightManager()
+
 
 def init_briefcase(user_data):
-    ub = UserBriefcase()
+    ub = UserBriefcase(weight_manager)
     ignored = user_data.get('ignored', [])
     ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
     favorites = user_data.get('favorites', [])
@@ -91,13 +94,21 @@ def settings_view():
 
 @app.route("/update_prices", methods=['GET', 'POST'])
 def update_prices_view():
-    tickers = [weight.code for weight in weights.values()]
+    tickers = [weight.code for weight in weight_manager.values()]
     with tink.Client(tink.TOKEN) as client:
         shares = tink.get_shares(client, tickers)
-        data = tink.save_prices(tink.get_prices(client, shares))
-    for code, attr in data.items():
-        if code in weights:
-            weights[code].set_price(attr['price'], attr['lotsize'])
+        shares_with_prices = tink.get_prices(client, shares)
+
+    price_map = {
+        share.ticker: {'price': float(price), 'lotsize': share.lot}
+        for share, price in shares_with_prices}
+
+    weight_manager.set_prices(price_map)
+
+    conn = db.get_sqlite_connection()
+    weight_manager.save_to_sqlite(conn, 'tinkoff')
+    conn.close()
+
     return redirect('/')
 
 

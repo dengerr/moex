@@ -1,14 +1,15 @@
 import json
 import sys
 from collections import namedtuple
+from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Mapping, Union
 
-secure_columns = [
-    'SECID', 'BOARDID', 'SHORTNAME', 'PREVPRICE', 'LOTSIZE', 'FACEVALUE', 'STATUS', 'BOARDNAME', 'DECIMALS', 'SECNAME',
-    'REMARKS', 'MARKETCODE', 'INSTRID', 'SECTORID', 'MINSTEP', 'PREVWAPRICE', 'FACEUNIT', 'PREVDATE', 'ISSUESIZE',
-    'ISIN', 'LATNAME', 'REGNUMBER', 'PREVLEGALCLOSEPRICE', 'CURRENCYID', 'SECTYPE', 'LISTLEVEL', 'SETTLEDATE']
-Secur = namedtuple('Secur', secure_columns)
+import db
+
+PriceMap = Mapping[str, Mapping[str, Union[float, int]]]
+# share.ticker: {'price': float(price), 'lotsize': share.lot}
+
 Plan = namedtuple('Plan', 'count amount')
 Fact = namedtuple('Fact', 'count amount')
 
@@ -24,7 +25,6 @@ class Weight:
     code: str
     weight: Decimal
     shortname: str
-    _secur: Optional[Secur] = None
 
     def __init__(self, code, weight, shortname):
         self.code = code
@@ -34,9 +34,8 @@ class Weight:
     def __str__(self):
         return f'{self.code}'
 
-    def set_secur(self, secur):
-        self.price = Decimal(secur.PREVPRICE)
-        self.lotsize = secur.LOTSIZE
+    def __repr__(self):
+        return f'{self.code} -> {self.weight}'
 
     def set_price(self, price, lotsize: int):
         self.price = Decimal(price)
@@ -47,35 +46,47 @@ class Weight:
         return self.price * self.lotsize
 
 
-# init
-def get_rows():
-    with open('securities.json', 'r') as fp:
-        data = json.load(fp)['securities']
-    rows = [Secur(*row) for row in data['data']]
-    return rows
+class WeightManager:
+    def __init__(self, weights: Optional[Mapping] = None, price_map: PriceMap = None):
+        if weights is None:
+            weights = {weight.code: weight for weight in self.get_weights()}
+        self.weights = weights
+        if price_map is None:
+            conn = db.get_sqlite_connection()
+            self.load_prices(conn)
+            conn.close()
 
+    @staticmethod
+    def get_weights():
+        with open('weights.txt', 'r') as fp:
+            data = fp.readlines()
+        rows = [row.strip().split('\t') for row in data]
+        return [Weight(*row) for row in rows]
 
-def get_weights():
-    with open('weights.txt', 'r') as fp:
-        data = fp.readlines()
-    rows = [row.strip().split('\t') for row in data]
-    return [Weight(*row) for row in rows]
+    def values(self):
+        return self.weights.values()
 
+    def load_prices(self, conn):
+        cursor = conn.cursor()
+        result = cursor.execute("SELECT dt, source, price_map FROM prices ORDER BY dt DESC LIMIT 1")
+        dt, source, price_map = result.fetchone()
+        for code, attr in json.loads(price_map).items():
+            if code in self.weights:
+                self.weights[code].set_price(attr['price'], attr['lotsize'])
 
-weights = {}
-for weight in get_weights():
-    weights[weight.code] = weight
+    def save_to_sqlite(self, conn, source: str):
+        price_map = {
+            ticker: {'price': weight.price, 'lotsize': weight.lotsize}
+            for ticker, weight in self.weights}
+        data = (datetime.utcnow(), source, json.dumps(price_map))
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO prices VALUES(?, ?, ?)", data)
+        conn.commit()
 
-try:
-    with open('prices.json', 'r') as fp:
-        data = json.load(fp)
-    for code, attr in data.items():
-        if code in weights:
-            weights[code].set_price(attr['price'], attr['lotsize'])
-except Exception:
-    for row in get_rows():
-        if row.SECID in weights:
-            weights[row.SECID].set_secur(row)
+    def set_prices(self, price_map: PriceMap):
+        for code, attr in price_map.items():
+            if code in self.weights:
+                self.weights[code].set_price(attr['price'], attr['lotsize'])
 
 
 class UserBriefcase:
@@ -83,6 +94,7 @@ class UserBriefcase:
     briefcase: dict
     ignored: set
     favorites: set
+    weights: WeightManager
 
     all_rur: Decimal  # сколько плановый портфель весит в рублях. Примерно равно kapital
     weights_sum: Decimal
@@ -91,7 +103,8 @@ class UserBriefcase:
     facts: dict
     user_amount_sum: Decimal
 
-    def __init__(self):
+    def __init__(self, weight_manager: WeightManager):
+        self.weight_manager = weight_manager
         self.ignored = set()
         self.favorites = set()
         self.set_weights_sum()
@@ -99,7 +112,7 @@ class UserBriefcase:
 
     @property
     def all(self):
-        for we in weights.values():
+        for we in self.weight_manager.values():
             if we.code not in self.ignored:
                 yield we
 
@@ -184,7 +197,6 @@ class UserBriefcase:
         print(f'user_amount_sum: {self.user_amount_sum:.2f} / {self.all_rur:.2f}')
 
     def print_all(self, use_rur=False, only_fav=False):
-        in_percent = 0
         total = self.total(use_rur)
         print(f"{' ':>20} {' ':>5} {' ':>9} {'plan':>7} {total:>10.0f} {'fact':>7} {self.user_amount_sum:>10.0f} ({self.in_percent(self.user_amount_sum, total):>7.0%})")
         print()
@@ -202,7 +214,7 @@ class UserBriefcase:
 
 
 if __name__ == '__main__':
-    ub = UserBriefcase()
+    ub = UserBriefcase(WeightManager())
     with open('user_briefcase.json', 'r') as fp:
         user_data = json.load(fp)
         ignored = user_data.get('ignored', [])
