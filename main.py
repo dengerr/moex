@@ -70,14 +70,13 @@ class WeightManager:
         cursor = conn.cursor()
         result = cursor.execute("SELECT dt, source, price_map FROM prices ORDER BY dt DESC LIMIT 1")
         dt, source, price_map = result.fetchone()
-        for code, attr in json.loads(price_map).items():
-            if code in self.weights:
-                self.weights[code].set_price(attr['price'], attr['lotsize'])
+        self.set_prices(json.loads(price_map))
 
     def save_to_sqlite(self, conn, source: str):
         price_map = {
-            ticker: {'price': weight.price, 'lotsize': weight.lotsize}
-            for ticker, weight in self.weights}
+            ticker: {'price': float(weight.price),
+                     'lotsize': int(weight.lotsize)}
+            for ticker, weight in self.weights.items()}
         data = (datetime.utcnow(), source, json.dumps(price_map))
         cursor = conn.cursor()
         cursor.execute("INSERT INTO prices VALUES(?, ?, ?)", data)
