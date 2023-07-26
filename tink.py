@@ -45,9 +45,16 @@ def main_fun():
         for acc in client.users.get_accounts().accounts:
             print(acc)
         import main
-        tickers = [weight.code for weight in main.weights.values()]
+        from db import get_sqlite_connection
+        conn = get_sqlite_connection()
+        tickers = list(main.fetch_names(conn.cursor()).keys())
         shares = get_shares(client, tickers)
-        save_prices(get_prices(client, shares))
+        shares_with_prices = get_prices(client, shares)
+        price_map = {
+            share.ticker: {'price': float(price), 'lotsize': share.lot}
+            for share, price in shares_with_prices}
+        main.WeightManager.save_to_sqlite(conn, 'tinkoff', price_map)
+        conn.close()
 
 
 if __name__ == "__main__":

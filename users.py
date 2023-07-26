@@ -4,7 +4,7 @@ from typing import Mapping
 
 import pyotp
 
-FIELDS = "email is_active is_available secret shares favorites ignored kapital"
+FIELDS = "email is_active is_available secret shares favorites ignored capital"
 UserData = namedtuple('UserData', FIELDS)
 
 
@@ -47,12 +47,13 @@ class User:
 
     @property
     def briefcase(self):
-        fields = 'shares favorites ignored kapital'.split()
+        fields = 'shares favorites ignored capital'.split()
         row = self.cursor.execute(
             'SELECT %s FROM users WHERE email=? LIMIT 1' % ', '.join(fields),
             (self.email,)
         ).fetchone()
-        return {field: (json.loads(val) if field == 'shares' else val) for field, val in zip(fields, row)}
+        return {field: (json.loads(val) if field == 'shares' else val)
+                for field, val in zip(fields, row)}
 
     def _get_user(self):
         row = self.cursor.execute(

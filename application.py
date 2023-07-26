@@ -1,5 +1,5 @@
-import shelve
 import sqlite3
+import typing as t
 from decimal import Decimal
 
 import pyotp
@@ -10,17 +10,14 @@ from flask import request
 from flask import session
 from flask_qrcode import QRcode
 
-import db
 import settings
 import tink
-from main import UserBriefcase, WeightManager
+from main import UserBriefcase, WeightManager, fetch_names, fetch_last_prices, fetch_weights
 from users import User
 
 app = Flask(__name__)
 app.secret_key = settings.SECRET_KEY
 QRcode(app)
-
-weight_manager = WeightManager()
 
 DATABASE = 'moex.sqlite'
 
@@ -39,13 +36,30 @@ def close_connection(exception):
         db.close()
 
 
+def app_shares() -> t.Mapping:
+    result = getattr(g, '_shares', None)
+    if result is None:
+        result = g._shares = fetch_names(get_db().cursor())
+    return result
+
+
+def last_prices() -> t.Mapping:
+    result = getattr(g, '_last_prices', None)
+    if result is None:
+        result = g._last_prices = fetch_last_prices(get_db().cursor())
+    return result
+
+
 def init_briefcase(user_data):
+    weights_map = fetch_weights(get_db().cursor(), 'MOEX 2022')
+    weight_manager = WeightManager(app_shares(), last_prices(), weights_map)
     ub = UserBriefcase(weight_manager)
+
     ignored = user_data.get('ignored', [])
     ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
     favorites = user_data.get('favorites', [])
     ub.set_favorites(favorites if isinstance(favorites, list) else favorites.split())
-    ub.set_kapital(Decimal(user_data['kapital']))
+    ub.set_capital(Decimal(user_data['capital']))
     ub.set_briefcase(user_data['shares'])
     return ub
 
@@ -69,8 +83,9 @@ def index():
 
     if request.method == 'PATCH':
         for k, v in request.form.items():
-            if k == 'kapital':
-                user_briefcase['kapital'] = int(v)
+            if k == 'capital':
+                user_briefcase['capital'] = int(v)
+                user.save(capital=user_briefcase['capital'])
             elif k == 'toggle_fav':
                 favs = user_briefcase['favorites'].split()
                 if v in favs:
@@ -78,6 +93,7 @@ def index():
                 else:
                     favs.append(v)
                 user_briefcase['favorites'] = ' '.join(favs)
+                user.save(favorites=user_briefcase['favorites'])
             elif k == 'toggle_ign':
                 ignored = user_briefcase['ignored'].split()
                 if v in ignored:
@@ -85,9 +101,10 @@ def index():
                 elif not user_briefcase['briefcase'].get(v):
                     ignored.append(v)
                 user_briefcase['ignored'] = ' '.join(ignored)
+                user.save(ignored=user_briefcase['ignored'])
             else:
-                user_briefcase['briefcase'][k] = int(v)
-        user.save(briefcase=user_briefcase)
+                user_briefcase['shares'][k] = int(v)
+                user.save(shares=user_briefcase['shares'])
 
     ub = init_briefcase(user_briefcase)
 
@@ -112,7 +129,7 @@ def settings_view():
 
 @app.route("/update_prices", methods=['GET', 'POST'])
 def update_prices_view():
-    tickers = [weight.code for weight in weight_manager.values()]
+    tickers = list(app_shares().keys())
     with tink.Client(tink.TOKEN) as client:
         shares = tink.get_shares(client, tickers)
         shares_with_prices = tink.get_prices(client, shares)
@@ -121,11 +138,8 @@ def update_prices_view():
         share.ticker: {'price': float(price), 'lotsize': share.lot}
         for share, price in shares_with_prices}
 
-    weight_manager.set_prices(price_map)
-
-    conn = db.get_sqlite_connection()
-    weight_manager.save_to_sqlite(conn, 'tinkoff')
-    conn.close()
+    g._last_prices = price_map
+    WeightManager.save_to_sqlite(get_db(), 'tinkoff', price_map)
 
     return redirect('/')
 

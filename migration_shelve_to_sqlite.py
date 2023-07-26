@@ -6,6 +6,7 @@ import db
 
 USERS_FILENAME = 'users.shelve'
 PRICES_FILENAME = 'prices.json'
+WEIGHTS_FILENAME = 'weights.txt'
 
 
 def migrate():
@@ -21,6 +22,11 @@ def migrate():
     result = cursor.execute('select count(*) from prices').fetchone()
     if not result or not result[0]:
         migrate_prices(cursor)
+        conn.commit()
+
+    result = cursor.execute('select count(*) from shares').fetchone()
+    if not result or not result[0]:
+        migrate_weights(cursor)
         conn.commit()
 
     conn.close()
@@ -52,6 +58,26 @@ def migrate_prices(cursor):
     print(price_map)
     data = (datetime.utcnow(), 'tinkoff', json.dumps(price_map))
     cursor.execute("INSERT INTO prices VALUES(?, ?, ?)", data)
+
+
+def migrate_weights(cursor):
+    with open(WEIGHTS_FILENAME, 'r') as fp:
+        data = fp.readlines()
+    rows = [row.strip().split('\t') for row in data]
+    print(rows)
+
+    shares = []
+    weights = {}
+    for ticker, weight, short_name in rows:
+        shares.append((ticker, short_name))
+        weights[ticker] = float(weight)
+
+    cursor.executemany(
+        "INSERT INTO shares VALUES(?, ?)",
+        shares)
+
+    cursor.execute("INSERT INTO weights VALUES(?, ?)",
+                   ('MOEX 2022', json.dumps(weights)))
 
 
 if __name__ == '__main__':
