@@ -98,7 +98,7 @@ def index():
                 ignored = user_briefcase['ignored'].split()
                 if v in ignored:
                     ignored.remove(v)
-                elif not user_briefcase['briefcase'].get(v):
+                elif not user_briefcase['shares'].get(v):
                     ignored.append(v)
                 user_briefcase['ignored'] = ' '.join(ignored)
                 user.save(ignored=user_briefcase['ignored'])
