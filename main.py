@@ -58,7 +58,7 @@ class Weight:
 
 
 def fetch_names(cursor) -> Dict[str, str]:
-    result = cursor.execute("SELECT ticker, short_name FROM shares ORDER BY ticker").fetchall()
+    result = cursor.execute("SELECT ticker, short_name FROM shares").fetchall()
     return {ticker: short_name for ticker, short_name in result}
 
 
