@@ -1,0 +1,8 @@
+<form action="/weights" method="post" hx-post="/weights" hx-target="body">
+    <input name="name" value="{{ name }}" {% if name %}readonly{% endif %}>
+    <br>
+    <textarea name="content" rows="24">{{ content }}</textarea>
+    <br>
+
+    <button >save</button>
+</form>

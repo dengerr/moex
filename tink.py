@@ -44,10 +44,10 @@ def main_fun():
     with Client(TOKEN) as client:
         for acc in client.users.get_accounts().accounts:
             print(acc)
+        import db
         import main
-        from db import get_sqlite_connection
-        conn = get_sqlite_connection()
-        tickers = list(main.fetch_names(conn.cursor()).keys())
+        conn = db.get_sqlite_connection()
+        tickers = list(db.fetch_names(conn.cursor()).keys())
         shares = get_shares(client, tickers)
         shares_with_prices = get_prices(client, shares)
         price_map = {

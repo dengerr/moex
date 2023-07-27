@@ -1,3 +1,4 @@
+import json
 import sqlite3
 import typing as t
 from decimal import Decimal
@@ -9,9 +10,10 @@ from flask import make_response, redirect, render_template, render_template_stri
 from flask import request, session
 from flask_qrcode import QRcode
 
+import db
 import settings
 import tink
-from main import UserBriefcase, WeightManager, fetch_names, fetch_last_prices, fetch_weights
+from main import UserBriefcase, WeightManager
 from users import User
 
 app = Flask(__name__)
@@ -37,19 +39,19 @@ def close_connection(exception):
 def app_shares() -> t.Mapping:
     result = getattr(g, '_shares', None)
     if result is None:
-        result = g._shares = fetch_names(get_db().cursor())
+        result = g._shares = db.fetch_names(get_db().cursor())
     return result
 
 
 def last_prices() -> t.Mapping:
     result = getattr(g, '_last_prices', None)
     if result is None:
-        result = g._last_prices = fetch_last_prices(get_db().cursor())
+        result = g._last_prices = db.fetch_last_prices(get_db().cursor())
     return result
 
 
 def init_briefcase(user_data):
-    weights_map = fetch_weights(get_db().cursor(), 'MOEX 2022')
+    weights_map = db.fetch_weights(get_db().cursor(), 'MOEX 2022')
     weight_manager = WeightManager(app_shares(), last_prices(), weights_map)
     ub = UserBriefcase(weight_manager)
 
@@ -123,6 +125,41 @@ def settings_view():
     if layout in ('desktop', 'mobile'):
         response.set_cookie('layout', layout)
     return response
+
+
+@app.route("/weights", methods=['GET', 'POST'])
+def weights_view():
+    conn = get_db()
+    cursor = conn.cursor()
+    weights_names = db.fetch_weights_names(cursor)
+
+    if request.method == 'POST':
+        content = request.form.get('content')
+        name = request.form.get('name')
+        if name and content:
+            tickers = set(json.loads(content).keys())
+            db.add_new_tickers(cursor, tickers)
+
+            if name in weights_names:
+                cursor.execute(
+                    "UPDATE weights SET weights_json=? WHERE name=?",
+                    (content, name, ))
+            else:
+                cursor.execute(
+                    "INSERT INTO weights VALUES(?, ?)",
+                    (name, content, ))
+            conn.commit()
+        else:
+            return 'error'
+
+    name = request.args.get('name')
+    if name == 'new':
+        return render_template('weights_form.html', content='', name='')
+    elif name:
+        weights_dict = db.fetch_weights(cursor, name)
+        return render_template('weights_form.html', content=json.dumps(weights_dict), name=name)
+
+    return htmx_response('weights.html', weights_names=weights_names, session=session)
 
 
 @app.route("/update_prices", methods=['GET', 'POST'])

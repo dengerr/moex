@@ -1,0 +1,16 @@
+<body>
+<style>
+    input, textarea {width: 100%; }
+</style>
+
+{% for name in weights_names %}
+    <li hx-get="/weights?name={{ name|urlencode }}" hx-target="#weight_form">{{ name }}</li>
+{% endfor %}
+<li hx-get="/weights?name=new" hx-target="#weight_form">Новый</li>
+
+<hr>
+
+<div id="weight_form" style="width: 100%;">
+</div>
+
+</body>

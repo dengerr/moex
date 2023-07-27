@@ -4,12 +4,9 @@ from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Mapping, Union, Dict
+from typing import Mapping
 
-Ticker = str
-PriceMap = Mapping[Ticker, Mapping[str, Union[float, int]]]
-# share.ticker: {'price': float(price), 'lotsize': share.lot}
-WeightMap = Mapping[Ticker, float]
+from db import Ticker, PriceMap, WeightMap, fetch_weights
 
 Plan = namedtuple('Plan', 'count amount')
 Fact = namedtuple('Fact', 'count amount')
@@ -57,21 +54,6 @@ class Weight:
         return self.price * self.lotsize
 
 
-def fetch_names(cursor) -> Dict[str, str]:
-    result = cursor.execute("SELECT ticker, short_name FROM shares").fetchall()
-    return {ticker: short_name for ticker, short_name in result}
-
-
-def fetch_last_prices(cursor) -> PriceMap:
-    result = cursor.execute("SELECT price_map FROM prices ORDER BY dt DESC LIMIT 1").fetchone()
-    return json.loads(result[0]) if result else None
-
-
-def fetch_weights(cursor, name) -> WeightMap:
-    result = cursor.execute("SELECT weights_json FROM weights WHERE name = ?", (name,)).fetchone()
-    return json.loads(result[0]) if result else None
-
-
 class WeightManager:
     names: Mapping[Ticker, str]
     prices: PriceMap
@@ -84,7 +66,7 @@ class WeightManager:
         self.prices = prices
         self.weights_map = weights_map
         self.weights = {ticker: Weight(ticker, weights_map[ticker], shortname)
-                        for ticker, shortname in names.items()}
+                        for ticker, shortname in names.items() if ticker in weights_map}
         self.set_prices(prices)
 
     def values(self):
@@ -176,8 +158,12 @@ class UserBriefcase:
         # процент акции от планового по этой акции
         if ticker in PAIRS_DICT:
             # для парных акций считаем сумму и по плану, и по факту
-            plan_amount = sum(self.plans[_code].amount for _code in PAIRS_DICT[ticker])
-            fact_amount = sum(self.facts[_code].amount for _code in PAIRS_DICT[ticker])
+            plan_amount = sum(
+                self.plans[_ticker].amount for _ticker in PAIRS_DICT[ticker]
+                if _ticker in self.plans)
+            fact_amount = sum(
+                self.facts[_ticker].amount for _ticker in PAIRS_DICT[ticker]
+                if _ticker in self.facts)
         else:
             plan_amount = self.plans[ticker].amount
             fact_amount = self.facts[ticker].amount
