@@ -3,11 +3,10 @@ import typing as t
 from decimal import Decimal
 
 import pyotp
-from flask import Flask, render_template, render_template_string
+from flask import Flask
 from flask import g
-from flask import redirect, make_response
-from flask import request
-from flask import session
+from flask import make_response, redirect, render_template, render_template_string
+from flask import request, session
 from flask_qrcode import QRcode
 
 import settings
@@ -17,9 +16,8 @@ from users import User
 
 app = Flask(__name__)
 app.secret_key = settings.SECRET_KEY
+DATABASE = getattr(settings, "SQLITE_DB_NAME", "moex.sqlite")
 QRcode(app)
-
-DATABASE = 'moex.sqlite'
 
 
 def get_db():
