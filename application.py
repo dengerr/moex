@@ -51,7 +51,8 @@ def last_prices() -> t.Mapping:
 
 
 def init_briefcase(user_data):
-    weights_map = db.fetch_weights(get_db().cursor(), 'MOEX 2022')
+    weight_name = user_data.get('weight_name', 'MOEX 2022')
+    weights_map = db.fetch_weights(get_db().cursor(), weight_name)
     weight_manager = WeightManager(app_shares(), last_prices(), weights_map)
     ub = UserBriefcase(weight_manager)
 
@@ -129,9 +130,17 @@ def settings_view():
 
 @app.route("/weights", methods=['GET', 'POST'])
 def weights_view():
+    assert session['email']
     conn = get_db()
     cursor = conn.cursor()
     weights_names = db.fetch_weights_names(cursor)
+
+    if request.args.get('use'):
+        cursor.execute(
+            "UPDATE users SET weight_name=? WHERE email=?",
+            (request.args.get('use'), session['email'],))
+        conn.commit()
+        return redirect('/')
 
     if request.method == 'POST':
         content = request.form.get('content')

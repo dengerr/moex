@@ -29,7 +29,8 @@ def init_sqlite(cursor):
                    "secret TEXT NOT NULL DEFAULT '', "
                    "shares BLOB NOT NULL DEFAULT '{}', "
                    "favorites TEXT NOT NULL DEFAULT '', ignored TEXT NOT NULL DEFAULT '', "
-                   "capital NUMERIC NOT NULL DEFAULT 1000000)")
+                   "capital NUMERIC NOT NULL DEFAULT 1000000, "
+                   "weight_name TEXT DEFAULT 'MOEX 2022')")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS shares("
                    "ticker TEXT PRIMARY KEY, "

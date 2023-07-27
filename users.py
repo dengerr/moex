@@ -4,7 +4,7 @@ from typing import Mapping
 
 import pyotp
 
-FIELDS = "email is_active is_available secret shares favorites ignored capital"
+FIELDS = "email is_active is_available secret shares favorites ignored capital weight_name"
 UserData = namedtuple('UserData', FIELDS)
 
 
@@ -47,7 +47,7 @@ class User:
 
     @property
     def briefcase(self):
-        fields = 'shares favorites ignored capital'.split()
+        fields = 'shares favorites ignored capital weight_name'.split()
         row = self.cursor.execute(
             'SELECT %s FROM users WHERE email=? LIMIT 1' % ', '.join(fields),
             (self.email,)

@@ -4,7 +4,11 @@
 </style>
 
 {% for name in weights_names %}
-    <li hx-get="/weights?name={{ name|urlencode }}" hx-target="#weight_form">{{ name }}</li>
+    <li>
+        {{ name }}
+        <a href="/weights?use={{ name|urlencode }}">use</a>
+        <a hx-get="/weights?name={{ name|urlencode }}" hx-target="#weight_form">edit</a>
+    </li>
 {% endfor %}
 <li hx-get="/weights?name=new" hx-target="#weight_form">Новый</li>
 
