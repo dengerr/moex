@@ -42,8 +42,8 @@ def save_prices(shares):
 
 def main_fun():
     with Client(TOKEN) as client:
-        for acc in client.users.get_accounts().accounts:
-            print(acc)
+        # for acc in client.users.get_accounts().accounts:
+        #     print(acc)
         import db
         import main
         conn = db.get_sqlite_connection()
