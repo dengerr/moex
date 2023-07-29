@@ -53,19 +53,11 @@ def last_prices() -> t.Mapping:
 def init_briefcase(user_data):
     weight_name = user_data.get('weight_name', 'MOEX 2022')
     weights_map = db.fetch_weights(get_db().cursor(), weight_name)
-    weight_manager = WeightManager(app_shares(), last_prices(), weights_map)
-    ub = UserBriefcase(weight_manager)
-
-    ignored = user_data.get('ignored', [])
-    favorites = user_data.get('favorites', [])
-    # ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
-    # ub.set_favorites(favorites if isinstance(favorites, list) else favorites.split())
-    # ub.set_capital(Decimal(user_data['capital']))
-    # ub.set_briefcase(user_data['shares'])
-    ub.set_all_params(
-        ignored if isinstance(ignored, list) else ignored.split(),
-        favorites if isinstance(favorites, list) else favorites.split(),
-        Decimal(user_data['capital']),
+    ub = UserBriefcase(
+        WeightManager(app_shares(), last_prices(), weights_map),
+        user_data['ignored'].split(),
+        user_data['favorites'].split(),
+        user_data['capital'],
         user_data['shares'],
     )
     return ub

@@ -4,7 +4,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from db import Ticker, PriceMap, WeightMap, fetch_weights
 
@@ -74,7 +74,7 @@ class WeightManager:
     def values(self):
         return self.weights.values()
 
-    def strategy_and_bought(self, ignored: set, briefcase: dict):
+    def strategy_and_bought(self, ignored: set, briefcase: Mapping):
         # акции из стратегии + уже купленные
         for weight in self.weights.values():
             if (weight.ticker in ignored) and (briefcase.get(weight.ticker, 0) <= 0):
@@ -107,8 +107,8 @@ class WeightManager:
 
 
 class UserBriefcase:
-    capital = Decimal(1 * 1000 * 1000)
-    briefcase: dict
+    capital: Decimal
+    briefcase: Mapping
     ignored: set
     favorites: set
     weights: WeightManager
@@ -119,50 +119,32 @@ class UserBriefcase:
     plans: dict
     facts: dict
     user_amount_sum: Decimal
+    __slots__ = ['weight_manager', 'capital', 'briefcase',
+                 'ignored', 'favorites', 'all', 'weights_sum', 'all_rur',
+                 'plans', 'facts', 'user_amount_sum']
 
-    def __init__(self, weight_manager: WeightManager):
+    def __init__(
+            self,
+            weight_manager: WeightManager,
+            ignored: Sequence,
+            favorites: Sequence,
+            capital: int,
+            briefcase: Mapping):
         self.weight_manager = weight_manager
-        self.ignored = set()
-        self.favorites = set()
-        self.briefcase = dict()
-        self.set_weights_sum()
+        self.capital = Decimal(capital or 1 * 1000 * 1000)
+        self.briefcase = briefcase
+        self.ignored = set(ignored)
+        self.favorites = set(favorites)
 
-    @property
-    def all(self):
+        self.all = tuple(self.get_all())
+        self.weights_sum = Decimal(sum(we.weight for we in self.all))
+        self.update_plan()
+        self.all_rur = Decimal(sum(plan.amount for plan in self.plans.values()))
+        self.update_fact()
+
+    def get_all(self):
         for we in self.weight_manager.strategy_and_bought(self.ignored, self.briefcase):
             yield we
-
-    def set_capital(self, capital):
-        self.capital = capital
-        # self.all_rur = sum((we.weight / self.weights_sum * capital) for we in self.all)
-        self.update_plan()
-        self.all_rur = Decimal(sum(plan.amount for plan in self.plans.values()))
-
-    def set_briefcase(self, briefcase):
-        self.briefcase = briefcase
-        self.set_weights_sum()
-        self.update_fact()
-
-    def set_ignored(self, ignored):
-        self.ignored = set(ignored)
-        self.set_weights_sum()
-
-    def set_favorites(self, favorites):
-        self.favorites = set(favorites)
-        self.set_weights_sum()
-
-    def set_all_params(self, ignored, favorites, capital, briefcase):
-        self.capital = capital
-        self.briefcase = briefcase
-        self.ignored = set(ignored)
-        self.favorites = set(favorites)
-        self.update_plan()
-        self.all_rur = Decimal(sum(plan.amount for plan in self.plans.values()))
-        self.update_fact()
-        self.set_weights_sum()
-
-    def set_weights_sum(self):
-        self.weights_sum = Decimal(sum(we.weight for we in self.all))
 
     def update_plan(self):
         self.plans = {}
@@ -243,21 +225,3 @@ class UserBriefcase:
             ign = 'i' if we.ticker in self.ignored else ''
             print(
                 f'{we.shortname[:20]:<20} {we.ticker:<5} {we.price:>9.2f} {plan.count:>7} {plan.amount:>10.0f} {fact.count:>7} {fact.amount:>10.0f} ({in_percent:>7.0%}) {fav or ign}')
-
-
-if __name__ == '__main__':
-    weights_map = fetch_weights(get_db().cursor(), 'MOEX 2022')
-    weight_manager = WeightManager(app_shares(), last_prices(), weights_map)
-    ub = UserBriefcase(weight_manager)
-    with open('user_briefcase.json', 'r') as fp:
-        user_data = json.load(fp)
-        ignored = user_data.get('ignored', [])
-        if 'all' not in sys.argv:
-            ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
-        favorites = user_data.get('favorites', [])
-        ub.set_favorites(favorites if isinstance(favorites, list) else favorites.split())
-        ub.set_capital(Decimal(user_data['capital']))
-        ub.set_briefcase(user_data['shares'])
-
-    only_fav = 'fav' in sys.argv
-    ub.print_all(only_fav=only_fav)
