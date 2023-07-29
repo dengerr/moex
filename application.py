@@ -57,11 +57,17 @@ def init_briefcase(user_data):
     ub = UserBriefcase(weight_manager)
 
     ignored = user_data.get('ignored', [])
-    ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
     favorites = user_data.get('favorites', [])
-    ub.set_favorites(favorites if isinstance(favorites, list) else favorites.split())
-    ub.set_capital(Decimal(user_data['capital']))
-    ub.set_briefcase(user_data['shares'])
+    # ub.set_ignored(ignored if isinstance(ignored, list) else ignored.split())
+    # ub.set_favorites(favorites if isinstance(favorites, list) else favorites.split())
+    # ub.set_capital(Decimal(user_data['capital']))
+    # ub.set_briefcase(user_data['shares'])
+    ub.set_all_params(
+        ignored if isinstance(ignored, list) else ignored.split(),
+        favorites if isinstance(favorites, list) else favorites.split(),
+        Decimal(user_data['capital']),
+        user_data['shares'],
+    )
     return ub
 
 

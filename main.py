@@ -38,6 +38,8 @@ class Weight:
         self.ticker = ticker
         self.weight = Decimal(weight)
         self.shortname = shortname
+        self.price = 1
+        self.lotsize = 1
 
     def __str__(self):
         return f'{self.ticker}'
@@ -72,6 +74,25 @@ class WeightManager:
     def values(self):
         return self.weights.values()
 
+    def strategy_and_bought(self, ignored: set, briefcase: dict):
+        # акции из стратегии + уже купленные
+        for weight in self.weights.values():
+            if (weight.ticker in ignored) and (briefcase.get(weight.ticker, 0) <= 0):
+                # убрать continue, если акция куплена
+                continue
+            yield weight
+
+        for ticker, shortname in self.names.items():
+            if ticker in self.weights:
+                continue
+            if (briefcase.get(ticker, 0) <= 0) or (ticker in ignored):
+                continue
+
+            attr = self.prices[ticker]
+            weight = Weight(ticker, 0, shortname)
+            weight.set_price(attr['price'], attr['lotsize'])
+            yield weight
+
     @staticmethod
     def save_to_sqlite(conn, source: str, price_map: PriceMap):
         data = (datetime.utcnow(), source, json.dumps(price_map))
@@ -103,14 +124,13 @@ class UserBriefcase:
         self.weight_manager = weight_manager
         self.ignored = set()
         self.favorites = set()
-        self.set_weights_sum()
         self.briefcase = dict()
+        self.set_weights_sum()
 
     @property
     def all(self):
-        for we in self.weight_manager.values():
-            if we.ticker not in self.ignored:
-                yield we
+        for we in self.weight_manager.strategy_and_bought(self.ignored, self.briefcase):
+            yield we
 
     def set_capital(self, capital):
         self.capital = capital
@@ -129,6 +149,16 @@ class UserBriefcase:
 
     def set_favorites(self, favorites):
         self.favorites = set(favorites)
+        self.set_weights_sum()
+
+    def set_all_params(self, ignored, favorites, capital, briefcase):
+        self.capital = capital
+        self.briefcase = briefcase
+        self.ignored = set(ignored)
+        self.favorites = set(favorites)
+        self.update_plan()
+        self.all_rur = Decimal(sum(plan.amount for plan in self.plans.values()))
+        self.update_fact()
         self.set_weights_sum()
 
     def set_weights_sum(self):
