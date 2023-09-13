@@ -1,13 +1,13 @@
+from django.conf import settings
 from tinkoff.invest import Client
 from tinkoff.invest.grpc.instruments_pb2 import INSTRUMENT_ID_TYPE_TICKER
 from tinkoff.invest.utils import quotation_to_decimal
 
 from main import PriceMap
-from settings import TINKOFF_TOKEN
 
-TOKEN = TINKOFF_TOKEN
+TOKEN = settings.TINKOFF_TOKEN
 CLASS_CODE = 'TQBR'
-TICKERS = ['SBER', 'MOEX', 'ROSN', 'GMKN', 'LKOH']
+EXAMPLE_TICKERS = ['SBER', 'MOEX', 'ROSN', 'GMKN', 'LKOH']
 Client = Client  # not autoremove import
 
 
