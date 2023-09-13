@@ -59,7 +59,7 @@ def code(apps, schema_editor):
     for ticker, short_name in shares_dict.items():
         Share.objects.create(ticker=ticker, short_name=short_name)
 
-    Strategy.objects.create(name='MOEX 2023', weights_json=weight_dict)
+    Strategy.objects.create(name='MOEX 2022', weights_json=weight_dict)
     SharePriceBlock.objects.create(source='init', price_map=last_prices)
 
 
