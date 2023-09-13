@@ -1,8 +1,8 @@
-<body class="mobile">
+<body class="mobile" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <h1 align=center>MOEX table</h1>
 
 <p align=center>
-{{ session.email }}
+{{ request.user.email }}
 <a href="/settings?layout=desktop">desktop layout</a>
 <a href="/logout">logout</a>
 </p>
@@ -25,7 +25,7 @@
       <br>
     <!-- </th> -->
     <!-- <th align=right> -->
-      <input type="text" name="capital" value="{{ ub.total() }}" hx-patch="/" hx-target="body">
+      <input type="text" name="capital" value="{{ ub.total() }}" hx-post="/" hx-target="body">
     </th>
     <th align=right>
       fact
@@ -34,19 +34,23 @@
     <!-- <th align=right> -->
       {{ "{:,.0f}".format(ub.user_amount_sum) }}
     </th>
-    <th align=center>{{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, ub.total())) }}</th>
+    <th align=center>
+        {{ "{:.0%}".format(ub.in_percent(ub.user_amount_sum, ub.total())) }}
+    </th>
   </tr>
 
   {%- for we in ub.all %}
   <tr>
     <td class=first align=center>
-      <a hx-patch="/" hx-target="body" hx-vals='{"toggle_fav": "{{we.ticker}}"}'>&#128151;</a>
+      <a hx-post="/" hx-target="body" hx-vals='{"toggle_fav": "{{we.ticker}}"}'>
+          &#128151;
+      </a>
     </td>
     <td class="first {% if we.ticker in ub.favorites %}fav{% endif %}" colspan=2 align=center>
       {{we.shortname}}
     </td>
     <td class=first align=center>
-      <a hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{we.ticker}}"}'
+      <a hx-post="/" hx-target="body" hx-vals='{"toggle_ign": "{{we.ticker}}"}'
         hx-confirm="Убрать из таблицы?">
         &#128078;</a>
     </td>
@@ -68,13 +72,15 @@
     </td>
     <td align=right>
       <input type="text" name="{{we.ticker}}" value="{{'%.0f' % fact.count}}"
-        hx-patch="/" hx-target="body">
+        hx-post="/" hx-target="body">
       <br>
     <!-- </td> -->
     <!-- <td align=right> -->
       {{"{:,.0f}".format(fact.amount)}}
     </td>
-    <td align=center class="{% if ub.get_in_percent(we.ticker) > 1.5 %}bigger{% endif %}">{{"{:.0%}".format(ub.get_in_percent(we.ticker))}}</td>
+    <td align=center class="{% if ub.percent_of_plan(we.ticker) > 1.5 %}bigger{% endif %}">
+        {{"{:.0%}".format(ub.percent_of_plan(we.ticker))}}
+    </td>
   </tr>
   {%- endfor %}
 
@@ -82,7 +88,7 @@
 
 <p>Ignored:
   {%- for ticker in ub.ignored %}
-    <button hx-patch="/" hx-target="body" hx-vals='{"toggle_ign": "{{ticker}}"}'
+    <button hx-post="/" hx-target="body" hx-vals='{"toggle_ign": "{{ticker}}"}'
       hx-confirm="Вернуть в таблицу?">
       {{ticker}}
     </button>

@@ -1,5 +1,4 @@
-flask
-pyotp
-flask-qrcode
 gunicorn
 tinkoff-investments==0.2.0b58
+Django~=4.2.5
+tinkoff~=0.1.1

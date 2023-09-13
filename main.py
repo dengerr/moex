@@ -1,12 +1,14 @@
 import json
-import sys
 from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, Union
 
-from db import Ticker, PriceMap, WeightMap, fetch_weights
+Ticker = str
+PriceMap = Mapping[Ticker, Mapping[str, Union[float, int]]]
+# share.ticker: {'price': float(price), 'lotsize': share.lot}
+WeightMap = Mapping[Ticker, float]
 
 Plan = namedtuple('Plan', 'count amount')
 Fact = namedtuple('Fact', 'count amount')
@@ -17,15 +19,6 @@ PAIRS = (
     ('SNGS', 'SNGSP'),
 )
 PAIRS_DICT = {ticker: pair for pair in PAIRS for ticker in pair}
-
-
-@dataclass
-class WeightFull:
-    ticker: str
-    weight: Decimal
-    shortname: str
-    price: Decimal
-    lotsize: int
 
 
 class Weight:
@@ -57,6 +50,11 @@ class Weight:
 
 
 class WeightManager:
+    """
+    Сущность, которая объединяет по акциям название, цену, вес из стратегии
+
+    При этом по портфелю пользователя может отдавать эти объединенные сущности.
+    """
     names: Mapping[Ticker, str]
     prices: PriceMap
     weights_map: WeightMap
@@ -92,13 +90,6 @@ class WeightManager:
             weight = Weight(ticker, 0, shortname)
             weight.set_price(attr['price'], attr['lotsize'])
             yield weight
-
-    @staticmethod
-    def save_to_sqlite(conn, source: str, price_map: PriceMap):
-        data = (datetime.utcnow(), source, json.dumps(price_map))
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO prices VALUES(?, ?, ?)", data)
-        conn.commit()
 
     def set_prices(self, price_map: PriceMap):
         for ticker, attr in price_map.items():
@@ -143,7 +134,8 @@ class UserBriefcase:
         self.update_fact()
 
     def get_all(self):
-        for we in self.weight_manager.strategy_and_bought(self.ignored, self.briefcase):
+        for we in self.weight_manager.strategy_and_bought(
+                self.ignored, self.briefcase):
             yield we
 
     def update_plan(self):
@@ -166,7 +158,7 @@ class UserBriefcase:
             self.user_amount_sum += amount
             self.facts[we.ticker] = Fact(count, amount)
 
-    def get_in_percent(self, ticker):
+    def percent_of_plan(self, ticker):
         # процент акции от планового по этой акции
         if ticker in PAIRS_DICT:
             # для парных акций считаем сумму и по плану, и по факту
@@ -196,6 +188,8 @@ class UserBriefcase:
         else:
             return 0
 
+
+class UserBriefcasePrinter(UserBriefcase):
     def print_plan(self):
         for we in self.all:
             plan = self.plans[we.ticker]
@@ -204,7 +198,7 @@ class UserBriefcase:
     def print_fact(self):
         for ticker, fact in self.facts.items():
             if fact.count:
-                in_percent = self.get_in_percent(ticker)
+                in_percent = self.percent_of_plan(ticker)
                 print(f'{ticker}: {fact.count} == {fact.amount} ({in_percent:.2%})')
         print(f'user_amount_sum: {self.user_amount_sum:.2f} / {self.all_rur:.2f}')
 
@@ -220,7 +214,7 @@ class UserBriefcase:
                 continue
             plan = self.plans[we.ticker]
             fact = self.facts[we.ticker]
-            in_percent = self.get_in_percent(we.ticker)
+            in_percent = self.percent_of_plan(we.ticker)
             fav = 'v' if not only_fav and we.ticker in self.favorites else ''
             ign = 'i' if we.ticker in self.ignored else ''
             print(
