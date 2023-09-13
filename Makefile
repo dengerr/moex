@@ -1,28 +1,17 @@
-default: update main
-
-main:
-	python3 main.py
-all:
-	python3 main.py all
-
-fav:
-	python3 main.py fav
+default: update
 
 update:
 	wget https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities.json -O securities.json
-update_tinkoff:
-	python3 tink.py
 
 securities.json: update
 
-settings.py:
-	python -c "import secrets; print(f'SECRET_KEY = b\'{secrets.token_urlsafe(16)}\'')" > settings.py
+dev:
+	./manage.py runserver --settings=moex.local_settings
 
-dev: settings.py
-	flask --app application run --debug --reload
-
-start: settings.py
-	gunicorn -w 1 'application:app' -b 0.0.0.0:8456
+start:
+	DJANGO_SETTINGS_MODULE=moex.production gunicorn -w 1 'moex.wsgi:application' -b 0.0.0.0:8456
 
 install:
 	pip install -r requirements.txt
+	./manage.py migrate
+	./manage.py collectstatic

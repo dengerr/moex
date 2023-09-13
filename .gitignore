@@ -3,4 +3,7 @@
 *.shelve
 *.json
 *.sqlite
+*.sqlite3
+/all_static
 /moex/local_settings.py
+/moex/production.py
