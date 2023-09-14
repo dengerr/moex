@@ -105,11 +105,11 @@
     {% if show_target %}
     <td align=right>
       <input type="text" name="price_to_buy-{{we.ticker}}" value="{% if row %}{{'%.0f' % row.price_to_buy}}{% else %}0{% endif %}"
-             hx-post="/set_row" hx-target="body">
+             hx-post="/set_row?show_target=1" hx-target="body">
     </td>
     <td align=right>
       <input type="text" name="price_target-{{we.ticker}}" value="{% if row %}{{'%.0f' % row.price_target}}{% else %}0{% endif %}"
-             hx-post="/set_row" hx-target="body">
+             hx-post="/set_row?show_target=1" hx-target="body">
     </td>
     {% endif %}
 
