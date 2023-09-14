@@ -37,7 +37,12 @@ class IndexView(View):
 
         strategies = models.Strategy.objects.all()
 
-        return htmx_response(request, template, ub=ub, strategies=strategies)
+        rows_qs = briefcase.rows.all().select_related('share')
+        rows = {row.share.ticker: row for row in rows_qs}
+        return htmx_response(
+            request, template, ub=ub, rows=rows, strategies=strategies,
+            show_target=request.GET.get('show_target'),
+        )
 
     def post(self, request):
         user_briefcase = models.Briefcase.get_for_user(request.user)
@@ -66,6 +71,23 @@ class IndexView(View):
                 user_briefcase.shares[k] = int(v)
                 user_briefcase.save()
         return self.get(request)
+
+
+@login_required
+def set_row(request):
+    briefcase = models.Briefcase.get_for_user(request.user)
+    for k, v in request.POST.items():
+        attr, ticker = k.split('-')
+        try:
+            row = briefcase.rows.get(share__ticker=ticker)
+        except models.Row.DoesNotExist:
+            row = models.Row(
+                briefcase=briefcase,
+                share=models.Share.objects.get(ticker=ticker))
+        attr_type = type(getattr(row, attr))
+        setattr(row, attr, attr_type(v))
+        row.save()
+    return IndexView().get(request)
 
 
 @login_required

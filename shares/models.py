@@ -26,7 +26,7 @@ class Share(models.Model):
             for share in tinkoff_shares.values()
         }
         for ticker, short_name in cls.all_tickers_as_dict().items():
-            if ticker == short_name:
+            if not ticker or ticker == short_name:
                 cls.objects.filter(ticker=ticker).update(
                     short_name=ticker_name_mapping[ticker],
                 )
@@ -50,6 +50,34 @@ class Briefcase(models.Model):
 
     def __str__(self):
         return self.user.email
+
+
+class Row(models.Model):
+    briefcase = models.ForeignKey(Briefcase, on_delete=models.CASCADE, related_name='rows')
+    share = models.ForeignKey(Share, on_delete=models.CASCADE)
+    is_favorite = models.BooleanField(default=False)
+    is_ignored = models.BooleanField(default=False)
+    count = models.IntegerField(default=0)
+    description = models.TextField(default='', blank=True, null=False)
+    price_to_buy = models.DecimalField(max_digits=18, decimal_places=4, default='0.00')
+    price_target = models.DecimalField(max_digits=18, decimal_places=4, default='0.00')
+
+    class Meta:
+        unique_together = (
+            ('briefcase', 'share'),
+        )
+
+    def buy_class(self, current_price):
+        """
+        css-класс. Покупать, продавать, ничего не делать
+        """
+        if self.price_to_buy and current_price:
+            if self.price_to_buy > current_price:
+                return 'buy'
+        if self.price_target and current_price:
+            if self.price_target < current_price:
+                return 'sell'
+        return ''
 
 
 class Strategy(models.Model):
