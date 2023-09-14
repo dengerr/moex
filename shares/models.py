@@ -76,8 +76,8 @@ class Row(models.Model):
     is_ignored = models.BooleanField(default=False)
     count = models.IntegerField(default=0)
     description = models.TextField(default='', blank=True, null=False)
-    price_to_buy = models.DecimalField(max_digits=18, decimal_places=4, default='0.00')
-    price_target = models.DecimalField(max_digits=18, decimal_places=4, default='0.00')
+    price_to_buy = models.DecimalField(max_digits=10, decimal_places=4, default='0.00')
+    price_target = models.DecimalField(max_digits=10, decimal_places=4, default='0.00')
 
     class Meta:
         unique_together = (
