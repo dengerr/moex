@@ -19,6 +19,18 @@ class Share(models.Model):
     def __str__(self):
         return self.ticker
 
+    @classmethod
+    def update_empty_names(cls, tinkoff_shares: dict):
+        ticker_name_mapping = {
+            share.ticker: share.name
+            for share in tinkoff_shares.values()
+        }
+        for ticker, short_name in cls.all_tickers_as_dict().items():
+            if ticker == short_name:
+                cls.objects.filter(ticker=ticker).update(
+                    short_name=ticker_name_mapping[ticker],
+                )
+
 
 class Briefcase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='briefcases')
