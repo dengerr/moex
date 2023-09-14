@@ -68,25 +68,16 @@ class IndexView(View):
                 user_briefcase.ignored = ' '.join(ignored)
                 user_briefcase.save()
             else:
-                user_briefcase.shares[k] = int(v)
-                user_briefcase.save()
+                user_briefcase.set_row_attr(k, 'count', v)
         return self.get(request)
 
 
 @login_required
 def set_row(request):
-    briefcase = models.Briefcase.get_for_user(request.user)
-    for k, v in request.POST.items():
+    briefcase: models.Briefcase = models.Briefcase.get_for_user(request.user)
+    for k, value in request.POST.items():
         attr, ticker = k.split('-')
-        try:
-            row = briefcase.rows.get(share__ticker=ticker)
-        except models.Row.DoesNotExist:
-            row = models.Row(
-                briefcase=briefcase,
-                share=models.Share.objects.get(ticker=ticker))
-        attr_type = type(getattr(row, attr))
-        setattr(row, attr, attr_type(v))
-        row.save()
+        briefcase.set_row_attr(ticker, attr, value)
     return IndexView().get(request)
 
 

@@ -51,6 +51,23 @@ class Briefcase(models.Model):
     def __str__(self):
         return self.user.email
 
+    def set_row_attr(self, ticker, attr, value):
+        # row
+        try:
+            row = self.rows.get(share__ticker=ticker)
+        except Row.DoesNotExist:
+            row = Row(
+                briefcase=self,
+                share=Share.objects.get(ticker=ticker))
+        attr_type = type(getattr(row, attr))
+        setattr(row, attr, attr_type(value))
+        row.save()
+
+        # по старинке
+        if attr == 'count':
+            self.shares[ticker] = int(value)
+            self.save()
+
 
 class Row(models.Model):
     briefcase = models.ForeignKey(Briefcase, on_delete=models.CASCADE, related_name='rows')
