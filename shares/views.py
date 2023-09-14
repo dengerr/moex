@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views import View
 
@@ -34,7 +35,9 @@ class IndexView(View):
         layout = request.COOKIES.get('layout', '')
         template = templates.get(layout, templates['mobile'])
 
-        return htmx_response(request, template, ub=ub)
+        strategies = models.Strategy.objects.all()
+
+        return htmx_response(request, template, ub=ub, strategies=strategies)
 
     def post(self, request):
         user_briefcase = models.Briefcase.get_for_user(request.user)
@@ -65,12 +68,22 @@ class IndexView(View):
         return self.get(request)
 
 
+@login_required
 def settings_view(request):
     layout = request.GET.get('layout', '')
     response = redirect('/')
     if layout in ('desktop', 'mobile'):
         response.set_cookie('layout', layout)
     return response
+
+
+@login_required
+def use_strategy(request, id):
+    new_strategy = models.Strategy.objects.get(id=id)
+    briefcase = models.Briefcase.get_for_user(request.user)
+    briefcase.strategy = new_strategy
+    briefcase.save()
+    return IndexView().get(request)
 
 
 class StrategyView(View):
@@ -119,6 +132,7 @@ class StrategyView(View):
         return htmx_response(request, 'weights.html', weights_names=weights_names)
 
 
+@login_required
 def update_prices_view(request):
     tickers = list(models.Share.all_tickers_as_dict().keys())
     with tink.Client(tink.TOKEN) as client:

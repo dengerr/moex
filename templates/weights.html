@@ -1,14 +1,14 @@
 <body>
 <style>
-    input, textarea {width: 100%; }
+  input, textarea {width: 100%; }
 </style>
 
 {% for name in weights_names %}
-    <li>
-        {{ name }}
-        <a href="/weights?use={{ name|urlencode }}">use</a>
-        <a hx-get="/weights?name={{ name|urlencode }}" hx-target="#weight_form">edit</a>
-    </li>
+  <li>
+    {{ name }}
+    <a href="/weights?use={{ name|urlencode }}">use</a>
+    <a hx-get="/weights?name={{ name|urlencode }}" hx-target="#weight_form">edit</a>
+  </li>
 {% endfor %}
 <li hx-get="/weights?name=new" hx-target="#weight_form">Новый</li>
 

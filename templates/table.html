@@ -1,12 +1,18 @@
 <body class="desktop" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <h1 align=center>MOEX table</h1>
 
-<p align=center>
-{{ request.user.email }}
-<a href="/settings?layout=mobile">mobile layout</a>
-<a href="/weights">weights</a>
-<a href="/logout">logout</a>
-</p>
+<aside class="strategies">
+  <p>{{ request.user.email }}</p>
+  <p><a href="/settings?layout=mobile">mobile layout</a></p>
+
+  <h2>Strategies</h2>
+
+  {% for strategy in strategies %}
+    <p>
+      <a hx-get="{{ url('use_strategy', args=(strategy.id,)) }}" hx-target="body" href="{{ url('use_strategy', args=(strategy.id,)) }}">{{ strategy.name }}</a>
+    </p>
+  {% endfor %}
+</aside>
 
 <table>
   <tr>
