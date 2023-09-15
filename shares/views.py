@@ -14,12 +14,13 @@ def get_user_briefcase(briefcase: models.Briefcase) -> UserBriefcase:
     weights_map = briefcase.my_strategy.weights_json
     shares_as_dict = models.Share.all_tickers_as_dict()
     last_prices = models.SharePriceBlock.last_prices()
+    rows = briefcase.rows.all().select_related('share')
     return UserBriefcase(
         WeightManager(shares_as_dict, last_prices, weights_map),
-        briefcase.ignored.split(),
-        briefcase.favorites.split(),
-        briefcase.capital,
-        briefcase.shares,
+        ignored=[row.share.ticker for row in rows if row.is_ignored],
+        favorites=[row.share.ticker for row in rows if row.is_favorite],
+        capital=briefcase.capital,
+        briefcase={row.share.ticker: row.count for row in rows},
     )
 
 
@@ -45,30 +46,22 @@ class IndexView(View):
         )
 
     def post(self, request):
-        user_briefcase = models.Briefcase.get_for_user(request.user)
+        briefcase = models.Briefcase.get_for_user(request.user)
 
         for k, v in request.POST.items():
             if k == 'capital':
-                user_briefcase.capital = int(v)
-                user_briefcase.save()
+                briefcase.capital = int(v)
+                briefcase.save()
             elif k == 'toggle_fav':
-                favs = user_briefcase.favorites.split()
-                if v in favs:
-                    favs.remove(v)
-                else:
-                    favs.append(v)
-                user_briefcase.favorites = ' '.join(favs)
-                user_briefcase.save()
+                row, _ = briefcase.rows.get_or_create(share__ticker=v)
+                row.is_favorite = not row.is_favorite
+                row.save()
             elif k == 'toggle_ign':
-                ignored = user_briefcase.ignored.split()
-                if v in ignored:
-                    ignored.remove(v)
-                elif not user_briefcase.shares.get(v):
-                    ignored.append(v)
-                user_briefcase.ignored = ' '.join(ignored)
-                user_briefcase.save()
+                row, _ = briefcase.rows.get_or_create(share__ticker=v)
+                row.is_ignored = not row.is_ignored
+                row.save()
             else:
-                user_briefcase.set_row_attr(k, 'count', v)
+                briefcase.set_row_attr(k, 'count', v)
         return self.get(request)
 
 

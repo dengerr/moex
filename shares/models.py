@@ -34,9 +34,6 @@ class Share(models.Model):
 
 class Briefcase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='briefcases')
-    shares = models.JSONField(default=dict, blank=True)
-    favorites = models.TextField(default='', blank=True)
-    ignored = models.TextField(default='', blank=True)
     capital = models.PositiveBigIntegerField(default=1000000)
     strategy = models.ForeignKey('Strategy', on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -62,11 +59,6 @@ class Briefcase(models.Model):
         attr_type = type(getattr(row, attr))
         setattr(row, attr, attr_type(value))
         row.save()
-
-        # по старинке
-        if attr == 'count':
-            self.shares[ticker] = int(value)
-            self.save()
 
 
 class Row(models.Model):
