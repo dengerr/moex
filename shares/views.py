@@ -4,9 +4,9 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views import View
 
-import tink
 from main import UserBriefcase, WeightManager
 from shares import models
+from shares.commands import update_prices
 from shares.utils import htmx_response
 
 
@@ -147,16 +147,5 @@ class StrategyView(View):
 
 @login_required
 def update_prices_view(request):
-    tickers = list(models.Share.all_tickers_as_dict().keys())
-    with tink.Client(tink.TOKEN) as client:
-        shares = tink.get_shares(client, tickers)
-        price_map = tink.get_prices(client, shares)
-
-    models.Share.update_empty_names(shares)
-
-    models.SharePriceBlock.objects.create(
-        source='tinkoff',
-        price_map=price_map,
-    )
-
+    update_prices()
     return redirect('/')
