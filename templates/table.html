@@ -4,11 +4,7 @@
 <aside class="strategies">
   <p>{{ request.user.email }}</p>
   <p><a href="/settings?layout=mobile">mobile layout</a></p>
-  {% if show_target %}
-  <p><a href="/">don't show target</a></p>
-  {% else %}
-  <p><a href="/?show_target=1">show target</a></p>
-  {% endif %}
+  <p><a href="/settings?show_target=toggle" hx-get="/settings?show_target=toggle" hx-target="body">show target</a></p>
   {% if user.is_staff %}
   <p><a href="{{ url('admin:index') }}">admin</a></p>
   {% endif %}

@@ -42,7 +42,7 @@ class IndexView(View):
         rows = {row.share.ticker: row for row in rows_qs}
         return htmx_response(
             request, template, ub=ub, rows=rows, strategies=strategies,
-            show_target=request.GET.get('show_target'),
+            show_target=request.COOKIES.get('show_target', 'false') == 'true',
         )
 
     def post(self, request):
@@ -76,10 +76,17 @@ def set_row(request):
 
 @login_required
 def settings_view(request):
-    layout = request.GET.get('layout', '')
     response = redirect('/')
+
+    layout = request.GET.get('layout', '')
     if layout in ('desktop', 'mobile'):
         response.set_cookie('layout', layout)
+
+    show_target = request.GET.get('show_target')
+    if show_target == 'toggle':
+        current = request.COOKIES.get('show_target', 'false')
+        response.set_cookie('show_target', 'true' if current == 'false' else 'false')
+
     return response
 
 
