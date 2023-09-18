@@ -1,10 +1,20 @@
+from typing import Iterable
+
 from django.contrib.auth.models import User
 from django.db import models
+
+import tink
 
 
 class Share(models.Model):
     ticker = models.CharField(max_length=8, unique=True)
     short_name = models.CharField(max_length=64)
+    figi = models.CharField(max_length=12, null=True, blank=True)
+    instrument_uid = models.UUIDField(null=True, blank=True)
+    lotsize = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.ticker
 
     @classmethod
     def all_tickers_as_dict(cls):
@@ -15,9 +25,6 @@ class Share(models.Model):
         db_tickers = set(cls.objects.all().values_list('ticker', flat=True))
         for ticker in tickers - db_tickers:
             cls.objects.create(ticker=ticker, short_name=ticker)
-
-    def __str__(self):
-        return self.ticker
 
     @classmethod
     def update_empty_names(cls, tinkoff_shares: dict):
@@ -30,6 +37,22 @@ class Share(models.Model):
                 cls.objects.filter(ticker=ticker).update(
                     short_name=ticker_name_mapping[ticker],
                 )
+
+    @classmethod
+    def fill_figi(cls):
+        """Заполнить figi, uid, short_name, lotsize через апи брокера"""
+        tickers = cls.objects.filter(figi__isnull=True).values_list('ticker', flat=True)
+        if not tickers:
+            return
+        with tink.Client(tink.TOKEN) as client:
+            shares = tink.get_shares(client, tickers)
+        for share in shares:
+            cls.objects.filter(ticker=share.ticker).update(
+                short_name=share.name,
+                figi=share.figi,
+                instrument_uid=share.uid,
+                lotsize=share.lot
+            )
 
 
 class Briefcase(models.Model):
