@@ -1,10 +1,9 @@
 import pickle
-from decimal import Decimal
-from typing import Iterable, List, Mapping
+from typing import Iterable, List
 
 from django.conf import settings
-from tinkoff.invest import Client, PortfolioPosition, PortfolioResponse
-from tinkoff.invest.grpc.instruments_pb2 import INSTRUMENT_ID_TYPE_TICKER
+from tinkoff.invest import Client, PortfolioResponse, Bond
+from tinkoff.invest.grpc.instruments_pb2 import INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID
 from tinkoff.invest.grpc.users_pb2 import ACCOUNT_TYPE_TINKOFF, ACCOUNT_TYPE_TINKOFF_IIS
 from tinkoff.invest.utils import quotation_to_decimal, money_to_decimal
 
@@ -15,6 +14,16 @@ SHARE_CLASS_CODE = 'TQBR'
 BOND_CLASS_CODE = 'TQOB'
 EXAMPLE_TICKERS = ['SBER', 'MOEX', 'ROSN', 'GMKN', 'LKOH']
 Client = Client  # not autoremove import
+
+
+def save(name: str, obj):
+    with open(f'{name}.pickle', 'wb') as fp:
+        pickle.dump(obj, fp)
+
+
+def load(name: str):
+    with open(f'{name}.pickle', 'rb') as fp:
+        return pickle.load(fp)
 
 
 def get_shares(client, tickers: Iterable) -> list:
@@ -70,15 +79,17 @@ def find(query):
         return result
 
 
-def get_bonds(tickers=['SU26227RMFS7']):
+def get_bonds(uids):
     with Client(TOKEN) as client:
         instruments = [
             client.instruments.bond_by(
-                id_type=INSTRUMENT_ID_TYPE_TICKER,
-                class_code=BOND_CLASS_CODE,
-                id=ticker,
+                # id_type=INSTRUMENT_ID_TYPE_TICKER,
+                # class_code=BOND_CLASS_CODE,
+                # id=ticker,
+                id_type=INSTRUMENT_ID_TYPE_UID,
+                id=uid,
             ).instrument
-            for ticker in tickers]
+            for uid in uids]
 
         response = client.market_data.get_last_prices(
             instrument_id=[instr.uid for instr in instruments])
@@ -93,8 +104,7 @@ def get_portfolio():
     # по счету возвращает показатели (стоимости разных инструментов) и positions
     with Client(TOKEN) as client:
         accounts = client.users.get_accounts()
-        with open('accounts.pickle', 'wb') as fp:
-            pickle.dump(accounts, fp)
+        save('accounts', accounts)
         print(accounts)
 
         result = []
@@ -108,27 +118,37 @@ def get_portfolio():
                 print(account.name)
                 print(quotation_to_decimal(portfolio.total_amount_portfolio))
 
-    with open('portfolio.pickle', 'wb') as fp:
-        pickle.dump(result, fp)
+    save('portfolio', result)
 
     return result
 
 
 def print_portfolio():
     from shares import models
-    uid_ticker = {
+    uid_name = {
         str(uid): ticker for uid, ticker in
-        models.Share.objects.all().values_list('instrument_uid', 'ticker')}
-    with open('portfolio.pickle', 'rb') as fp:
-        portfolios: List[PortfolioResponse] = pickle.load(fp)
-    with open('accounts.pickle', 'rb') as fp:
-        accounts = pickle.load(fp)
+        models.Share.objects.all().values_list('instrument_uid', 'short_name')}
+    portfolios: List[PortfolioResponse] = load('portfolio')
+    accounts = load('accounts')
+    bonds_instruments: List[Bond] = load('bonds')
+    for bond in bonds_instruments:
+        uid_name[bond.uid] = bond.name
+
+    # diff
+    # briefcase = models.Briefcase.objects.get(id=1)
+    # rows = {str(k): v for k, v in briefcase.rows.all().values_list(
+    #     'share__ticker', 'count')}
+    # print(rows)
+    # tin_rows = {}
+
+    # bonds = set()
 
     total = 0
+    total_shares = 0
     for acc, port in zip(accounts.accounts, portfolios):
         print(f'{acc.name} {money_to_decimal(port.total_amount_portfolio):.0f}')
         for pos in port.positions:
-            name = uid_ticker.get(pos.instrument_uid, pos.figi)
+            name = uid_name.get(pos.instrument_uid, pos.figi)
             quantity = quotation_to_decimal(pos.quantity)
             price = money_to_decimal(pos.current_price)
             summ = ((price + money_to_decimal(pos.current_nkd)) * quantity)
@@ -138,9 +158,27 @@ def print_portfolio():
             print(f'{name:<40}{summ:>20.2f}')
             print(f'{quantity:>10.0f}{price:>20.2f}{expected_yield:>20.2f}{app_percent:>9.2f}%')
             total += summ
+            if pos.instrument_type == 'share':
+                total_shares += summ
+
+                # diff
+                # tin_rows.setdefault(name, 0)
+                # tin_rows[name] += quantity
+
+            # elif pos.instrument_type == 'bond' and pos.instrument_uid not in bonds:
+            #     bonds.add(pos.instrument_uid)
             # print(pos)
         print()
     print(f'total: {total:.0f}')
+    print(f'total_shares: {total_shares:.0f}')
+
+    # save('bonds', get_bonds(bonds))
+
+    # diff
+    # for ticker, count in rows.items():
+    #     if int(tin_rows.get(ticker, 0)) != count:
+    #         print('not equal, ticker', ticker)
+    #         print(f'{count} != {tin_rows.get(ticker)}')
 
 
 def get_positions():
@@ -160,15 +198,13 @@ def get_positions():
             # instrument_uid='5e1c2634-afc4-4e50-ad6d-f78fc14a539a',
             # exchange_blocked=False, instrument_type='share')
 
-    with open('positions.pickle', 'wb') as fp:
-        pickle.dump(result, fp)
+    save('positions', positions)
     return result
 
 
 def print_positions_info():
     # тут нет цен, надо подтягивать из БД или отдельным запросом
-    with open('positions.pickle', 'rb') as fp:
-        acc_positions = pickle.load(fp)
+    acc_positions = load('positions')
     for positions in acc_positions:
         for pos in positions.securities:
             print(pos)
