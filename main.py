@@ -146,7 +146,15 @@ class UserBriefcase:
     def get_sorted(self, sort_by):
         iterator = self.weight_manager.strategy_and_bought(self.ignored, self.briefcase)
         if sort_by == 'fact_amount':
-            sort_by_rub_sum = lambda we: self.facts[we.ticker].amount
+            def sort_by_rub_sum(we):
+                if we.ticker in PAIRS_DICT:
+                    fact_amount = sum(
+                        self.facts[_ticker].amount
+                        for _ticker in PAIRS_DICT[we.ticker]
+                        if _ticker in self.facts)
+                else:
+                    fact_amount = self.facts[we.ticker].amount
+                return fact_amount
             items = sorted(iterator, key=sort_by_rub_sum, reverse=True)
         else:
             items = iterator
