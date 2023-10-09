@@ -120,7 +120,9 @@ class UserBriefcase:
             ignored: Sequence,
             favorites: Sequence,
             capital: int,
-            briefcase: Mapping):
+            briefcase: Mapping,
+            sort_by: str = 'fact_amount',
+    ):
         self.weight_manager = weight_manager
         self.capital = Decimal(capital or 1 * 1000 * 1000)
         self.briefcase = briefcase
@@ -133,10 +135,22 @@ class UserBriefcase:
         self.all_rur = Decimal(sum(plan.amount for plan in self.plans.values()))
         self.update_fact()
 
+        if sort_by:
+            self.all = tuple(self.get_sorted(sort_by))
+
     def get_all(self):
         iterator = self.weight_manager.strategy_and_bought(self.ignored, self.briefcase)
-        sort_by_rub_sum = lambda we: self.briefcase.get(we.ticker, 0) * we.price
-        for we in sorted(iterator, key=sort_by_rub_sum, reverse=True):
+        for we in iterator:
+            yield we
+
+    def get_sorted(self, sort_by):
+        iterator = self.weight_manager.strategy_and_bought(self.ignored, self.briefcase)
+        if sort_by == 'fact_amount':
+            sort_by_rub_sum = lambda we: self.facts[we.ticker].amount
+            items = sorted(iterator, key=sort_by_rub_sum, reverse=True)
+        else:
+            items = iterator
+        for we in items:
             yield we
 
     def update_plan(self):
