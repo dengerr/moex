@@ -134,8 +134,9 @@ class UserBriefcase:
         self.update_fact()
 
     def get_all(self):
-        for we in self.weight_manager.strategy_and_bought(
-                self.ignored, self.briefcase):
+        iterator = self.weight_manager.strategy_and_bought(self.ignored, self.briefcase)
+        sort_by_rub_sum = lambda we: self.briefcase.get(we.ticker, 0)
+        for we in sorted(iterator, key=sort_by_rub_sum, reverse=True):
             yield we
 
     def update_plan(self):
