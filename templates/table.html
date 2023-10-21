@@ -10,12 +10,15 @@
   {% endif %}
 
   <h2>Strategies</h2>
-
   {% for strategy in strategies %}
     <p>
       <a hx-get="{{ url('use_strategy', args=(strategy.id,)) }}" hx-target="body" href="{{ url('use_strategy', args=(strategy.id,)) }}">{{ strategy.name }}</a>
     </p>
   {% endfor %}
+
+  <h2>Sort</h2>
+  <p><a href="/settings?sort=fact_amount">По доле в портфеле<a></p>
+  <p><a href="/settings?sort=strategy">По доле в стратегии<a></p>
 </aside>
 
 <table>

@@ -4,13 +4,13 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views import View
 
-from main import UserBriefcase, WeightManager
+from main import UserBriefcase, WeightManager, SortVars
 from shares import models
 from shares.commands import update_prices
 from shares.utils import htmx_response
 
 
-def get_user_briefcase(briefcase: models.Briefcase) -> UserBriefcase:
+def get_user_briefcase(briefcase: models.Briefcase, sort_by) -> UserBriefcase:
     weights_map = briefcase.my_strategy.weights_json
     shares_as_dict = models.Share.all_tickers_as_dict()
     last_prices = models.SharePriceBlock.last_prices()
@@ -21,13 +21,14 @@ def get_user_briefcase(briefcase: models.Briefcase) -> UserBriefcase:
         favorites=[row.share.ticker for row in rows if row.is_favorite],
         capital=briefcase.capital,
         briefcase={row.share.ticker: row.count for row in rows},
+        sort_by=sort_by,
     )
 
 
 class IndexView(View):
     def get(self, request, *args, **kwargs):
         briefcase = models.Briefcase.get_for_user(request.user)
-        ub = get_user_briefcase(briefcase)
+        ub = get_user_briefcase(briefcase, sort_by=request.COOKIES.get('sort', ''))
 
         templates = {
             'desktop': 'table.html',
@@ -86,6 +87,10 @@ def settings_view(request):
     if show_target == 'toggle':
         current = request.COOKIES.get('show_target', 'false')
         response.set_cookie('show_target', 'true' if current == 'false' else 'false')
+
+    sort = request.GET.get('sort', '')
+    if sort in (item.value for item in SortVars):
+        response.set_cookie('sort', sort)
 
     return response
 

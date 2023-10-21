@@ -3,6 +3,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
+from enum import Enum
 from typing import Mapping, Sequence, Union
 
 Ticker = str
@@ -19,6 +20,11 @@ PAIRS = (
     ('SNGS', 'SNGSP'),
 )
 PAIRS_DICT = {ticker: pair for pair in PAIRS for ticker in pair}
+
+
+class SortVars(Enum):
+    fact_amount = 'fact_amount'
+    strategy = 'strategy'
 
 
 class Weight:
@@ -121,7 +127,7 @@ class UserBriefcase:
             favorites: Sequence,
             capital: int,
             briefcase: Mapping,
-            sort_by: str = 'fact_amount',
+            sort_by: str = SortVars.fact_amount.value,
     ):
         self.weight_manager = weight_manager
         self.capital = Decimal(capital or 1 * 1000 * 1000)
@@ -145,7 +151,7 @@ class UserBriefcase:
 
     def get_sorted(self, sort_by):
         iterator = self.weight_manager.strategy_and_bought(self.ignored, self.briefcase)
-        if sort_by == 'fact_amount':
+        if sort_by == SortVars.fact_amount.value:
             def sort_by_rub_sum(we):
                 if we.ticker in PAIRS_DICT:
                     fact_amount = sum(
