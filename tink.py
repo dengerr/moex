@@ -2,7 +2,7 @@ import pickle
 from typing import Iterable, List
 
 from django.conf import settings
-from tinkoff.invest import Client, PortfolioResponse, Bond
+from tinkoff.invest import Client, PortfolioResponse, Bond, WithdrawLimitsResponse
 from tinkoff.invest.grpc.instruments_pb2 import INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID
 from tinkoff.invest.grpc.users_pb2 import ACCOUNT_TYPE_TINKOFF, ACCOUNT_TYPE_TINKOFF_IIS
 from tinkoff.invest.utils import quotation_to_decimal, money_to_decimal
@@ -79,7 +79,7 @@ def find(query):
         return result
 
 
-def get_bonds(uids):
+def download_bonds(uids):
     with Client(TOKEN) as client:
         instruments = [
             client.instruments.bond_by(
@@ -100,27 +100,32 @@ def get_bonds(uids):
     return instruments
 
 
-def get_portfolio():
+def download_portfolio():
     # по счету возвращает показатели (стоимости разных инструментов) и positions
     with Client(TOKEN) as client:
         accounts = client.users.get_accounts()
         save('accounts', accounts)
         print(accounts)
 
-        result = []
+        portfolio = []
+        withdraw_limits = []
         for account in accounts.accounts:
             # инвесткопилка не поддерживается
             if account.type in (ACCOUNT_TYPE_TINKOFF, ACCOUNT_TYPE_TINKOFF_IIS):
                 # https://tinkoff.github.io/investAPI/operations/#portfolioresponse
-                portfolio = client.operations.get_portfolio(account_id=account.id)
-                result.append(portfolio)
+                portfolio_result = client.operations.get_portfolio(account_id=account.id)
+                portfolio.append(portfolio_result)
                 # текущая стоимость счета
                 print(account.name)
-                print(quotation_to_decimal(portfolio.total_amount_portfolio))
+                print(quotation_to_decimal(portfolio_result.total_amount_portfolio))
 
-    save('portfolio', result)
+                withdraw_limits_result = client.operations.get_withdraw_limits(account_id=account.id)
+                withdraw_limits.append(withdraw_limits_result)
 
-    return result
+    save('portfolio', portfolio)
+    save('withdraw_limits', withdraw_limits)
+
+    return portfolio
 
 
 def print_portfolio():
@@ -130,6 +135,7 @@ def print_portfolio():
         models.Share.objects.all().values_list('instrument_uid', 'short_name')}
     portfolios: List[PortfolioResponse] = load('portfolio')
     accounts = load('accounts')
+    withdraw_limits: List[WithdrawLimitsResponse] = load('withdraw_limits')
     bonds_instruments: List[Bond] = load('bonds')
     for bond in bonds_instruments:
         uid_name[bond.uid] = bond.name
@@ -145,7 +151,7 @@ def print_portfolio():
 
     total = 0
     total_shares = 0
-    for acc, port in zip(accounts.accounts, portfolios):
+    for acc, port, withdraw in zip(accounts.accounts, portfolios, withdraw_limits):
         print(f'{acc.name} {money_to_decimal(port.total_amount_portfolio):.0f}')
         for pos in port.positions:
             name = uid_name.get(pos.instrument_uid, pos.figi)
@@ -169,10 +175,14 @@ def print_portfolio():
             #     bonds.add(pos.instrument_uid)
             # print(pos)
         print()
+
+        withdraw: WithdrawLimitsResponse
+        for money in withdraw.money:
+            print(money_to_decimal(money), money.currency)
     print(f'total: {total:.0f}')
     print(f'total_shares: {total_shares:.0f}')
 
-    # save('bonds', get_bonds(bonds))
+    # save('bonds', download_bonds(bonds))
 
     # diff
     # for ticker, count in rows.items():
@@ -181,7 +191,7 @@ def print_portfolio():
     #         print(f'{count} != {tin_rows.get(ticker)}')
 
 
-def get_positions():
+def download_positions():
     # более быстрый, чем портфолио, запрос, без цен и статистики, только количества
     with Client(TOKEN) as client:
         accounts = client.users.get_accounts()
