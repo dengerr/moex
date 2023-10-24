@@ -52,7 +52,7 @@ class Weight:
 
     @property
     def lotprice(self):
-        return self.price * self.lotsize
+        return (self.price * self.lotsize) or Decimal('0.01')  # чтобы не было DivisionByZero
 
 
 class WeightManager:
