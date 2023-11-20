@@ -1,7 +1,7 @@
 <body class="desktop" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-<h1 align=center>MOEX table</h1>
-
 <aside class="strategies">
+  <h1 align=center>MOEX table</h1>
+
   <p>{{ request.user.email }}</p>
   <p><a href="/settings?layout=mobile">mobile layout</a></p>
   <p><a href="/settings?show_target=toggle" hx-get="/settings?show_target=toggle" hx-target="body">show target</a></p>
