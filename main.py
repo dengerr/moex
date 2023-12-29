@@ -204,7 +204,12 @@ class UserBriefcase:
 
     def percent_of_total(self, ticker):
         # процент акции от общего капитала
-        fact_amount = self.facts[ticker].amount
+        if ticker in PAIRS_DICT:
+            fact_amount = sum(
+                self.facts[_ticker].amount for _ticker in PAIRS_DICT[ticker]
+                if _ticker in self.facts)
+        else:
+            fact_amount = self.facts[ticker].amount
         return self.in_percent(fact_amount, self.total())
 
     def total(self, use_rur=False):
